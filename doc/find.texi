@@ -330,16 +330,7 @@ entire expression is true (@pxref{Print File Name}), unless the
 expression contains an action other than @samp{-prune} or
 @samp{-quit}.
 Actions which inhibit the default @samp{-print} are
-@samp{-delete},
-@samp{-execdir},
-@samp{-exec},
-@samp{-fls},
-@samp{-fprint0},
-@samp{-fprintf},
-@samp{-fprint},
 @samp{-ls},
-@samp{-okdir},
-@samp{-ok},
 @samp{-print0},
 @samp{-printf}
 and @samp{-print}.
@@ -410,9 +401,7 @@ exclusive, and is therefore not allowed at the same time.
 The @file{file} argument is mandatory.
 One can use @samp{-files0-from -} to read the list of starting points from the
 standard input stream, and e.g. from a pipe.
-In this case, the actions @samp{-ok} and @samp{-okdir} are not allowed,
-because they would obviously interfere with reading from standard input
-in order to get a user confirmation.
+@c rfind: -ok and -okdir have been removed.
 
 The starting points in @file{file} have to be separated by ASCII NUL characters.
 Two consecutive NUL characters, i.e., a starting point with a Zero-length
@@ -817,16 +806,6 @@ command line.  Use of this option also implies the same behaviour as
 the @samp{-noleaf} option.  If you later use the @samp{-H} or
 @samp{-P} options, this does not turn off @samp{-noleaf}.
 
-Actions that can cause symbolic links to become broken while
-@samp{find} is executing (for example @samp{-delete}) can give rise to
-confusing behaviour.  Take for example the command line
-@samp{find -L . -type d -delete}.   This will delete empty
-directories.  If a subtree includes only directories and symbolic
-links to directories, this command may still not successfully delete
-it, since deletion of the target of the symbolic link will cause the
-symbolic link to become broken and @samp{-type d} is false for broken
-symbolic links.
-
 @item -follow
 This option forms part of the ``expression'' and must be specified
 after the file names, but it is otherwise equivalent to @samp{-L}.
@@ -1180,8 +1159,7 @@ and @samp{%b} format specifiers for the @samp{-printf} predicate.
 @deffn Test -empty
 True if the file is empty and is either a regular file or a directory.
 This might help determine good candidates for deletion.  This test is
-useful with @samp{-depth} (@pxref{Directories}) and @samp{-delete}
-(@pxref{Single File}).
+useful with @samp{-depth} (@pxref{Directories}).
 @end deffn
 
 @node Type
@@ -1541,9 +1519,6 @@ If the @samp{-depth} option is in effect, the subdirectories will have
 already been visited in any case.  Hence @samp{-prune} has no effect
 in this case.
 
-Because @samp{-delete} implies @samp{-depth}, using @samp{-prune} in
-combination with @samp{-delete} may well result in the deletion of
-more files than you intended.
 @end deffn
 
 
@@ -1552,9 +1527,7 @@ Exit immediately (with return value zero if no errors have occurred).
 This is different to @samp{-prune} because @samp{-prune} only applies
 to the contents of pruned directories, while @samp{-quit} simply makes
 @code{find} stop immediately.  No child processes will be left
-running.  Any command lines which have been built by @samp{-exec
-... @{@} +} or @samp{-execdir ... \+} are invoked before the program is
-exited.  After @samp{-quit} is executed, no more files specified on
+running.  After @samp{-quit} is executed, no more files specified on
 the command line will be processed.  For example, @samp{find /tmp/foo
 /tmp/bar -print -quit} will print only @samp{/tmp/foo}.  One common
 use of @samp{-quit} is to stop searching the file system once we have
@@ -1587,12 +1560,6 @@ If a file disappears after its name has been read from a directory but
 before @code{find} gets around to examining the file with @code{stat},
 don't issue an error message.  If you don't specify this option, an
 error message will be issued.
-
-Furthermore, @code{find} with the @samp{-ignore_readdir_race} option
-will ignore errors of the @samp{-delete} action in the case the file
-has disappeared since the parent directory was read: it will not output
-an error diagnostic, and the return code of the @samp{-delete} action
-will be true.
 
 This option can be useful in system
 scripts (cron scripts, for example) that examine areas of the
@@ -1713,17 +1680,19 @@ Always false.
 @chapter Actions
 
 There are several ways you can print information about the files that
-match the criteria you gave in the @code{find} expression.  You can
-print the information either to the standard output or to a file that
-you name.  You can also execute commands that have the file names as
-arguments.  You can use those commands as further filters to select
-files.
+match the criteria you gave in the @code{rfind} expression.  You can
+print the information to the standard output.
+
+@quotation Note
+@code{rfind} is a restricted variant of GNU @code{find}.  The actions
+@code{-delete}, @code{-exec}, @code{-execdir}, @code{-ok}, @code{-okdir},
+@code{-fls}, @code{-fprint}, @code{-fprint0}, and @code{-fprintf} have been
+removed to prevent filesystem modifications and arbitrary command execution.
+@end quotation
 
 @menu
 * Print File Name::
 * Print File Information::
-* Run Commands::
-* Delete Files::
 * Adding Tests::
 @end menu
 
@@ -1737,19 +1706,6 @@ for which you are searching might contain a newline, you should use
 @samp{-print0} instead.
 @end deffn
 
-@deffn Action -fprint file
-True; print the entire file name into file @var{file}, followed by a
-newline.  If @var{file} does not exist when @code{find} is run, it is
-created; if it does exist, it is truncated to 0 bytes.  The named
-output file is always created, even if no output is sent to it.  The
-file names @file{/dev/stdout} and @file{/dev/stderr} are handled
-specially; they refer to the standard output and standard error
-output, respectively.
-
-If there is the faintest possibility that one of the files for which
-you are searching might contain a newline, you should use
-@samp{-fprint0} instead.
-@end deffn
 
 
 @c @deffn Option -show-control-chars how
@@ -1844,15 +1800,8 @@ The date the file was last modified.
 The file's name.  @samp{-ls} quotes non-printable characters in the
 file names using C-like backslash escapes.  This may change soon, as
 the treatment of unprintable characters is harmonised for @samp{-ls},
-@samp{-fls}, @samp{-print}, @samp{-fprint}, @samp{-printf} and
-@samp{-fprintf}.
+@samp{-print}, and @samp{-printf}.
 @end enumerate
-@end deffn
-
-@deffn Action -fls file
-True; like @samp{-ls} but write to @var{file} like @samp{-fprint}
-(@pxref{Print File Name}).  The named output file is always created,
-even if no output is sent to it.
 @end deffn
 
 @deffn Action -printf format
@@ -1881,20 +1830,12 @@ find -printf "%i %4k %M %3n %-8u %-8g %8s %T+ %p\n->%l\0" | cat
 A practical reason for doing this would be to get literal filenames in
 the output, instead of @samp{-ls}'s backslash-escaped names.  (Using
 @code{cat} here prevents this happening for the @samp{%p} format
-specifier; @pxref{Unusual Characters in File Names}).  This format also
+specifier).  This format also
 outputs a uniform timestamp format.
 
 As for symbolic links, the format above outputs the target of the symbolic link
 on a second line, following @samp{\n->}.  There is nothing following the arrow
 for file types other than symbolic links.
-Another approach, for complete consistency, would be to @code{-fprintf} the
-symbolic links into a separate file, so they too can be null-terminated.
-@end deffn
-
-@deffn Action -fprintf file format
-True; like @samp{-printf} but write to @var{file} like @samp{-fprint}
-(@pxref{Print File Name}).  The output file is always created, even if
-no output is ever sent to it.
 @end deffn
 
 @menu
@@ -1907,7 +1848,7 @@ no output is ever sent to it.
 @node Escapes
 @subsection Escapes
 
-The escapes that @samp{-printf} and @samp{-fprintf} recognise are:
+The escapes that @samp{-printf} recognises are:
 
 @table @code
 @item \a
@@ -1941,7 +1882,7 @@ printed to the standard error output (because it was probably a typo).
 @node Format Directives
 @subsection Format Directives
 
-@samp{-printf} and @samp{-fprintf} support the following format
+@samp{-printf} supports the following format
 directives to print information about the file being processed.  The C
 @code{printf} function, field width and precision specifiers are
 supported, as applied to string (%s) types. That is, you can specify
@@ -2316,730 +2257,6 @@ left-aligned.  That is, if the field width is greater than the actual
 contents of the field, the requisite number of spaces are printed
 after the field content instead of before it.
 
-@node Run Commands
-@section Run Commands
-
-You can use the list of file names created by @code{find} or
-@code{locate} as arguments to other commands.  In this way you can
-perform arbitrary actions on the files.
-
-@menu
-* Single File::
-* Multiple Files::
-* Querying::
-@end menu
-
-@node Single File
-@subsection Single File
-
-Here is how to run a command on one file at a time.
-
-@deffn Action -execdir command ;
-Execute @var{command}; true if @var{command} returns zero.  @code{find}
-takes all arguments after @samp{-execdir} to be part of the command until
-an argument consisting of @samp{;} is reached.
-It replaces the string @samp{@{@}} by the current file name being processed
-everywhere it occurs in the command.
-Each file name except for the root directory @samp{/} is prepended with
-@samp{./}.
-Both of these constructions need to be escaped (with a @samp{\}) or quoted to
-protect them from expansion by the shell.
-The command is executed in the directory which @code{find} was searching at the
-time the action was executed (that is, @{@} will expand to a file in the local
-directory).
-
-For example, to compare each C header file in or below the current
-directory with the file @file{/tmp/master}:
-
-@example
-find . -name '*.h' -execdir diff -u '@{@}' /tmp/master ';'
-@end example
-@end deffn
-
-If you use @samp{-execdir}, you must ensure that the @env{PATH}
-variable contains only absolute directory names.  Having an empty
-element in @env{PATH} or explicitly including @samp{.} (or any other
-non-absolute name) is insecure.  GNU find will refuse to run if you
-use @samp{-execdir} and it thinks your @env{PATH} setting is
-insecure.  For example:
-
-@table @samp
-@item /bin:/usr/bin:
-Insecure; empty path element (at the end)
-@item :/bin:/usr/bin:/usr/local/bin
-Insecure; empty path element (at the start)
-@item /bin:/usr/bin::/usr/local/bin
-Insecure; empty path element (two colons in a row)
-@item /bin:/usr/bin:.:/usr/local/bin
-Insecure; @samp{.} is a path element (@file{.} is not an absolute file name)
-@item /bin:/usr/bin:sbin:/usr/local/bin
-Insecure; @samp{sbin} is not an absolute file name
-@item /bin:/usr/bin:/sbin:/usr/local/bin
-Secure (if you control the contents of those directories and any access to them)
-@end table
-
-Another similar option, @samp{-exec} is supported, but is less secure.
-@xref{Security Considerations}, for a discussion of the security
-problems surrounding @samp{-exec}.
-
-
-@deffn Action -exec command ;
-This insecure variant of the @samp{-execdir} action is specified by
-POSIX.  Like @samp{-execdir command ;} it is true if zero is
-returned by @var{command}. The main difference is that the command is
-executed in the directory from which @code{find} was invoked, meaning
-that @samp{@{@}} is expanded to a relative path starting with the name
-of one of the starting directories, rather than just the basename of
-the matched file.
-
-While some implementations of @code{find} replace the @samp{@{@}} only
-where it appears on its own in an argument, GNU @code{find} replaces
-@samp{@{@}} wherever it appears.
-@end deffn
-
-
-@node Multiple Files
-@subsection Multiple Files
-
-Sometimes you need to process files one at a time.  But usually this
-is not necessary, and, it is faster to run a command on as many files
-as possible at a time, rather than once per file.  Doing this saves on
-the time it takes to start up the command each time.
-
-The @samp{-execdir} and @samp{-exec} actions have variants that build
-command lines containing as many matched files as possible.
-
-@deffn Action -execdir command @{@} +
-This works as for @samp{-execdir command ;}, except that the result is always
-true, and the @samp{@{@}} at the end of the command is expanded to a list of
-names of matching files.
-Each file name except for the root directory @samp{/} is prepended with
-@samp{./}.
-This expansion is done in such a way as to avoid exceeding the maximum command
-line length available on the system.
-Only one @samp{@{@}} is allowed within the command, and it must appear at the
-end, immediately before the @samp{+}.
-A @samp{+} appearing in any position other than immediately after @samp{@{@}}
-is not considered to be special (that is, it does not terminate the command).
-@end deffn
-
-
-@deffn Action -exec command @{@} +
-This insecure variant of the @samp{-execdir} action is specified by
-POSIX.  The main difference is that the command is executed in the
-directory from which @code{find} was invoked, meaning that @samp{@{@}}
-is expanded to a relative path starting with the name of one of the
-starting directories, rather than just the basename of the matched
-file.  The result is always true.
-@end deffn
-
-Before @code{find} exits, any partially-built command lines are
-executed.  This happens even if the exit was caused by the
-@samp{-quit} action.  However, some types of error (for example not
-being able to invoke @code{stat()} on the current directory) can cause
-an immediate fatal exit.  In this situation, any partially-built
-command lines will not be invoked (this prevents possible infinite
-loops).
-
-At first sight, it looks like the list of filenames to be processed
-can only be at the end of the command line, and that this might be a
-problem for some commands (@code{cp} and @code{rsync} for example).
-
-However, there is a slightly obscure but powerful workaround for this
-problem which takes advantage of the behaviour of @code{sh -c}:
-
-@example
-find startpoint -tests @dots{} -exec sh -c 'scp "$@@" remote:/dest' sh @{@} +
-@end example
-
-In the example above, the filenames we want to work on need to occur
-on the @code{scp} command line before the name of the destination.  We
-use the shell to invoke the command @code{scp "$@@" remote:/dest} and
-the shell expands @code{"$@@"} to the list of filenames we want to
-process.
-
-Another, but less secure, way to run a command on more than one file
-at once, is to use the @code{xargs} command, which is invoked like
-this:
-
-@example
-xargs @r{[}@var{option}@dots{}@r{]} @r{[}@var{command} @r{[}@var{initial-arguments}@r{]}@r{]}
-@end example
-
-@code{xargs} normally reads arguments from the standard input.  These
-arguments are delimited by blanks (which can be protected with double
-or single quotes or a backslash) or newlines.  It executes the
-@var{command} (the default is @file{echo}) one or more times with any
-@var{initial-arguments} followed by arguments read from standard
-input.  Blank lines on the standard input are ignored.  If the
-@samp{-L} option is in use, trailing blanks indicate that @code{xargs}
-should consider the following line to be part of this one.
-
-Instead of blank-delimited names, it is safer to use @samp{find
--print0} or @samp{find -fprint0} and process the output by giving the
-@samp{-0} or @samp{--null} option to @code{xargs}, GNU @code{tar},
-GNU @code{cpio}, or @code{perl}.  The @code{locate} command also has a
-@samp{-0} or @samp{--null} option which does the same thing.
-
-You can use shell command substitution (backquotes) to process a list
-of arguments, like this:
-
-@example
-grep -l sprintf `find $HOME -name '*.c' -print`
-@end example
-
-However, that method produces an error if the length of the @samp{.c}
-file names exceeds the operating system's command line length limit.
-@code{xargs} avoids that problem by running the command as many times
-as necessary without exceeding the limit:
-
-@example
-find $HOME -name '*.c' -print | xargs grep -l sprintf
-@end example
-
-However, if the command needs to have its standard input be a terminal
-(@code{less}, for example), you have to use the shell command
-substitution method or use either the @samp{--arg-file} option or the
-@samp{--open-tty} option of @code{xargs}.
-
-The @code{xargs} command will usually process all of its input,
-building command lines and executing them.
-The processing stops earlier and immediately if the tool reads a line containing
-the end-of-file marker string specified with the @samp{--eof} option,
-or if one of the launched commands exits with a status of 255.
-The latter will cause @code{xargs} to issue an error message and exit with
-status 124.
-
-@menu
-* Unsafe File Name Handling::
-* Safe File Name Handling::
-* Unusual Characters in File Names::
-* Limiting Command Size::
-* Controlling Parallelism::
-* Interspersing File Names::
-@end menu
-
-@node Unsafe File Name Handling
-@subsubsection Unsafe File Name Handling
-
-Because file names can contain quotes, backslashes, blank characters,
-and even newlines, it is not safe to process them using @code{xargs}
-in its default mode of operation.  But since most files' names do not
-contain blanks, this problem occurs only infrequently.  If you are
-only searching through files that you know have safe names, then you
-need not be concerned about it.
-
-Error messages issued by @code{find} and @code{locate} quote unusual
-characters in file names in order to prevent unwanted changes in the
-terminal's state.
-
-
-@c This example is adapted from:
-@c From: pfalstad@stone.Princeton.EDU (Paul John Falstad)
-@c Newsgroups: comp.unix.shell
-@c Subject: Re: Beware xargs security holes
-@c Date: 16 Oct 90 19:12:06 GMT
-@c
-In many applications, if @code{xargs} botches processing a file
-because its name contains special characters, some data might be lost.
-The importance of this problem depends on the importance of the data
-and whether anyone notices the loss soon enough to correct it.
-However, here is an extreme example of the problems that using
-blank-delimited names can cause.  If the following command is run
-daily from @code{cron}, then any user can remove any file on the
-system:
-
-@example
-find / -name '#*' -atime +7 -print | xargs rm
-@end example
-
-For example, you could do something like this:
-
-@example
-eg$ echo > '#
-vmunix'
-@end example
-
-@noindent
-and then @code{cron} would delete @file{/vmunix}, if it ran
-@code{xargs} with @file{/} as its current directory.
-
-To delete other files, for example @file{/u/joeuser/.plan}, you could
-do this:
-
-@example
-eg$ mkdir '#
-'
-eg$ cd '#
-'
-eg$ mkdir u u/joeuser u/joeuser/.plan'
-'
-eg$ echo > u/joeuser/.plan'
-/#foo'
-eg$ cd ..
-eg$ find . -name '#*' -print | xargs echo
-./# ./# /u/joeuser/.plan /#foo
-@end example
-
-@node Safe File Name Handling
-@subsubsection Safe File Name Handling
-
-Here is how to make @code{find} output file names so that they can be
-used by other programs without being mangled or misinterpreted.  You
-can process file names generated this way by giving the @samp{-0} or
-@samp{--null} option to GNU @code{xargs}, GNU @code{tar}, GNU
-@code{cpio}, or @code{perl}.
-
-Both @code{find . -print0} and @code{xargs -0} are
-POSIX-conforming since Issue 8 (IEEE Std 1003.1-2024).
-
-@deffn Action -print0
-True; print the entire file name on the standard output, followed by a
-null character.
-@end deffn
-
-@deffn Action -fprint0 file
-True; like @samp{-print0} but write to @var{file} like @samp{-fprint}
-(@pxref{Print File Name}).  The output file is always created.
-@end deffn
-
-As of findutils version 4.2.4, the @code{locate} program also has a
-@samp{--null} option which does the same thing.  For similarity with
-@code{xargs}, the short form of the option @samp{-0} can also be used.
-
-If you want to be able to handle file names safely but need to run
-commands which want to be connected to a terminal on their input, you
-can use the @samp{--open-tty} option to @code{xargs} or the
-@samp{--arg-file} option to @code{xargs} like this:
-
-@example
-find / -name xyzzy -print0 > list
-xargs --null --arg-file=list munge
-@end example
-
-The example above runs the @code{munge} program on all the files named
-@file{xyzzy} that we can find, but @code{munge}'s input will still be
-the terminal (or whatever the shell was using as standard input).  If
-your shell has the ``process substitution'' feature @samp{<(...)}, you
-can do this in just one step:
-
-@example
-xargs --null --arg-file=<(find / -name xyzzy -print0) munge
-@end example
-
-@node Unusual Characters in File Names
-@subsubsection Unusual Characters in File Names
-As discussed above, you often need to be careful about how the names
-of files are handled by @code{find} and other programs.  If the output
-of @code{find} is not going to another program but instead is being
-shown on a terminal, this can still be a problem.  For example, some
-character sequences can reprogram the function keys on some terminals.
-@xref{Security Considerations}, for a discussion of other security
-problems relating to @code{find}.
-
-Unusual characters are handled differently by various
-actions, as described below.
-
-@table @samp
-@item -print0
-@itemx -fprint0
-Always print the exact file name, unchanged, even if the output is
-going to a terminal.
-@item -ok
-@itemx -okdir
-Always print the exact file name, unchanged.  This will probably
-change in a future release.
-@item -ls
-@itemx -fls
-Unusual characters are always escaped.  White space, backslash, and
-double quote characters are printed using C-style escaping (for
-example @samp{\f}, @samp{\"}).  Other unusual characters are printed
-using an octal escape.  Other printable characters (for @samp{-ls} and
-@samp{-fls} these are the characters between octal 041 and 0176) are
-printed as-is.
-@item -printf
-@itemx -fprintf
-If the output is not going to a terminal, it is printed as-is.
-Otherwise, the result depends on which directive is in use:
-
-@table @asis
-@item %D, %F, %H, %Y, %y
-These expand to values which are not under control of files' owners,
-and so are printed as-is.
-@item  %a, %b, %c, %d, %g, %G, %i, %k, %m, %M, %n, %s, %t, %u, %U
-These have values which are under the control of files' owners but
-which cannot be used to send arbitrary data to the terminal, and so
-these are printed as-is.
-@item %f, %h, %l, %p, %P
-The output of these directives is quoted if the output is going to a
-terminal.  The setting of the @env{LC_CTYPE} environment
-variable is used to determine which characters need to be quoted.
-
-This quoting is performed in the same way as for GNU @code{ls}.  This
-is not the same quoting mechanism as the one used for @samp{-ls} and
-@samp{fls}.  If you are able to decide what format to use for the
-output of @code{find} then it is normally better to use @samp{\0} as a
-terminator than to use newline, as file names can contain white space
-and newline characters.
-@end table
-@item -print
-@itemx -fprint
-Quoting is handled in the same way as for the @samp{%p} directive of
-@samp{-printf} and @samp{-fprintf}.  If you are using @code{find} in a
-script or in a situation where the matched files might have arbitrary
-names, you should consider using @samp{-print0} instead of
-@samp{-print}.
-@end table
-
-
-The @code{locate} program quotes and escapes unusual characters in
-file names in the same way as @code{find}'s @samp{-print} action.
-
-The behaviours described above may change soon, as the treatment of
-unprintable characters is harmonised for @samp{-ls}, @samp{-fls},
-@samp{-print}, @samp{-fprint}, @samp{-printf} and @samp{-fprintf}.
-
-@node Limiting Command Size
-@subsubsection Limiting Command Size
-
-@code{xargs} gives you control over how many arguments it passes to
-the command each time it executes it.  By default, it uses up to
-@code{ARG_MAX} - 2k, or 128k, whichever is smaller, characters per
-command.  It uses as many lines and arguments as fit within that
-limit.  The following options modify those values.
-
-@table @code
-@item --no-run-if-empty
-@itemx -r
-If the standard input does not contain any nonblanks, do not run the
-command.  By default, the command is run once even if there is no
-input.  This option is a GNU extension.
-
-@item --max-lines@r{[}=@var{max-lines}@r{]}
-@itemx -L @var{max-lines}
-@itemx -l@r{[}@var{max-lines}@r{]}
-Use at most @var{max-lines} nonblank input lines per command line;
-@var{max-lines} defaults to 1 if omitted; omitting the argument is not
-allowed in the case of the @samp{-L} option.  Trailing blanks cause an
-input line to be logically continued on the next input line, for the
-purpose of counting the lines.  Implies @samp{-x}.  The preferred name
-for this option is @samp{-L} as this is specified by POSIX.
-
-@item --max-args=@var{max-args}
-@itemx -n @var{max-args}
-Use at most @var{max-args} arguments per command line.  Fewer than
-@var{max-args} arguments will be used if the size (see the @samp{-s}
-option) is exceeded, unless the @samp{-x} option is given, in which
-case @code{xargs} will exit.
-
-@item --max-chars=@var{max-chars}
-@itemx -s @var{max-chars}
-Use at most @var{max-chars} characters per command line, including the
-command initial arguments and the terminating nulls at the ends of the
-argument strings.  If you specify a value for this option which is too
-large or small, a warning message is printed and the appropriate upper
-or lower limit is used instead.  You can use @samp{--show-limits}
-option to understand the command-line limits applying to @code{xargs}
-and how this is affected by any other options.  The POSIX limits shown
-when you do this have already been adjusted to take into account the
-size of your environment variables.
-
-The largest allowed value is system-dependent, and is calculated as
-the argument length limit for exec, less the size of your environment,
-less 2048 bytes of headroom.  If this value is more than 128KiB,
-128Kib is used as the default value; otherwise, the default value is
-the maximum.
-@end table
-
-@node Controlling Parallelism
-@subsubsection Controlling Parallelism
-
-Normally, @code{xargs} runs one command at a time.  This is called
-"serial" execution; the commands happen in a series, one after another.
-If you'd like @code{xargs} to do things in "parallel", you can ask it
-to do so, either when you invoke it, or later while it is running.
-Running several commands at one time can make the entire operation
-go more quickly, if the commands are independent, and if your system
-has enough resources to handle the load.  When parallelism works in
-your application, @code{xargs} provides an easy way to get your work
-done faster.
-
-@table @code
-@item --max-procs=@var{max-procs}
-@itemx -P @var{max-procs}
-Run up to @var{max-procs} processes at a time; the default is 1.  If
-@var{max-procs} is 0, @code{xargs} will run as many processes as
-possible at a time.  Use the @samp{-n}, @samp{-s}, or @samp{-L} option
-with @samp{-P}; otherwise chances are that the command will be run
-only once. If a child process exits with status 255, @code{xargs} will
-still wait for all child processes to exit (before version 4.9.0 this
-might not happen).
-@end table
-
-If @code{xargs} is run without the @samp{-P} option, it will not
-change the handling of the @code{SIGUSR1} and @code{SIGUSR2} signals.
-This means they will terminate the @code{xargs} program unless those
-signals were set to be ignored in the parent process of @code{xargs}.
-If you do not want parallel execution but you also do not want these
-signals to be fatal, you can specify @code{-P 1}.
-
-Suppose you have a directory tree of large image files and a
-@code{makeallsizes} script that takes a single file name and creates
-various sized images from it (thumbnail-sized, web-page-sized,
-printer-sized, and the original large file).  The script is doing
-enough work that it takes significant time to run, even on a single
-image.  You could run:
-
-@example
-find originals -name '*.jpg' | xargs -L 1 makeallsizes
-@end example
-
-This will run @code{makeallsizes @var{filename}} once for each @code{.jpg}
-file in the @code{originals} directory.  However, if your system has
-two central processors, this script will only keep one of them busy.
-Instead, you could probably finish in about half the time by running:
-
-@example
-find originals -name '*.jpg' | xargs -L 1 -P 2 makeallsizes
-@end example
-
-@code{xargs} will run the first two commands in parallel, and then
-whenever one of them terminates, it will start another one, until
-the entire job is done.
-
-The same idea can be generalized to as many processors as you have handy.
-It also generalizes to other resources besides processors.  For example,
-if @code{xargs} is running commands that are waiting for a response from a
-distant network connection, running a few in parallel may reduce the
-overall latency by overlapping their waiting time.
-
-If you are running commands in parallel, you need to think about how they should
-arbitrate access to any resources that they share.
-For example, if more than one of them tries to print to standard output, the
-output will be produced in an indeterminate order (and very likely mixed up)
-unless the processes collaborate in some way to prevent this.
-Using some kind of locking scheme is one way to prevent such problems.
-In general, using a locking scheme will help ensure correct output but reduce
-performance.
-If you don't want to tolerate the performance difference, simply arrange for
-each process to produce a separate output file (or otherwise use separate
-resources).
-
-@code{xargs} also allows ``turning up'' or ``turning down'' its parallelism
-in the middle of a run.  Suppose you are keeping your four-processor
-system busy for hours, processing thousands of images using @code{-P 4}.
-Now, in the middle of the run, you or someone else wants you to reduce
-your load on the system, so that something else will run faster.
-If you interrupt @code{xargs}, your job will be half-done, and it
-may take significant manual work to resume it only for the remaining
-images.  If you suspend @code{xargs} using your shell's job controls
-(e.g. @code{control-Z}), then it will get no work done while suspended.
-
-Find out the process ID of the @code{xargs} process, either from your
-shell or with the @code{ps} command.  After you send it the signal
-@code{SIGUSR2}, @code{xargs} will run one fewer command in parallel.
-If you send it the signal @code{SIGUSR1}, it will run one more command
-in parallel.  For example:
-
-@example
-shell$ xargs <allimages -L 1 -P 4 makeallsizes &
-[4] 27643
-   ... at some later point ...
-shell$ kill -USR2 27643
-shell$ kill -USR2 %4
-@end example
-
-The first @code{kill} command will cause @code{xargs} to wait for
-two commands to terminate before starting the next command (reducing
-the parallelism from 4 to 3).  The second @code{kill} will reduce it from
-3 to 2.  (@code{%4} works in some shells as a shorthand for the process
-ID of the background job labeled @code{[4]}.)
-
-Similarly, if you started a long @code{xargs} job without parallelism, you
-can easily switch it to start running two commands in parallel by sending
-it a @code{SIGUSR1}.
-
-@code{xargs} will never terminate any existing commands when you ask it
-to run fewer processes.  It merely waits for the excess commands to
-finish.  If you ask it to run more commands, it will start the next
-one immediately (if it has more work to do).  If the degree of
-parallelism is already 1, sending @code{SIGUSR2} will have no further
-effect (since @code{--max-procs=0} means that there should be no limit
-on the number of processes to run).
-
-There is an implementation-defined limit on the number of processes.
-This limit is shown with @code{xargs --show-limits}.  The limit is at
-least 127 on all systems (and on the author's system it is
-2147483647).
-
-If you send several identical signals quickly, the operating system
-does not guarantee that each of them will be delivered to @code{xargs}.
-This means that you can't rapidly increase or decrease the parallelism by
-more than one command at a time.  You can avoid this problem by sending
-a signal, observing the result, then sending the next one; or merely by
-delaying for a few seconds between signals (unless your system is very
-heavily loaded).
-
-Whether or not parallel execution will work well for you depends on
-the nature of the command you are running in parallel, on the
-configuration of the system on which you are running the command, and
-on the other work being done on the system at the time.
-
-@node Interspersing File Names
-@subsubsection Interspersing File Names
-
-@code{xargs} can insert the name of the file it is processing between
-arguments you give for the command.  Unless you also give options to
-limit the command size (@pxref{Limiting Command Size}), this mode of
-operation is equivalent to @samp{find -exec} (@pxref{Single File}).
-
-@table @code
-@item -I @var{replace-str}
-@itemx --replace@r{[}=@var{replace-str}@r{]}
-@itemx -i@r{[}@var{replace-str}@r{]}
-Replace occurrences of @var{replace-str} in the initial arguments with
-names read from standard input.
-Also, unquoted blanks do not terminate arguments;
-instead, the input is split at newlines only.
-If @var{replace-str} is omitted (omitting it is allowed only for @samp{-i}
-and @samp{--replace}), it defaults to @samp{@{@}} (like for @samp{find -exec}).
-Implies @samp{-x} and @samp{-L 1}.
-The @samp{-i} option is deprecated in favour of the @samp{-I} option.
-@end table
-
-As an example, to sort each file in the @file{bills}
-directory, leaving the output in that file name with @file{.sorted}
-appended, you could do:
-
-@example
-find bills -type f | xargs -I XX sort -o XX.sorted XX
-@end example
-
-@noindent
-The equivalent command using @samp{find -execdir} is:
-
-@example
-find bills -type f -execdir sort -o '@{@}.sorted' '@{@}' ';'
-@end example
-
-When you use the @samp{-I} option, each line read from the input is
-buffered internally.  This means that there is an upper limit on the
-length of input line that @code{xargs} will accept when used with the
-@samp{-I} option.  To work around this limitation, you can use the
-@samp{-s} option to increase the amount of buffer space that xargs
-uses, and you can also use an extra invocation of xargs to ensure that
-very long lines do not occur.  For example:
-
-@example
-somecommand | xargs -s 50000 echo | xargs -I '@{@}' -s 100000 rm '@{@}'
-@end example
-
-Here, the first invocation of @code{xargs} has no input line length
-limit because it doesn't use the @samp{-I} option. The second
-invocation of @code{xargs} does have such a limit, but we have ensured
-that it never encounters a line which is longer than it can
-handle.
-
-This is not an ideal solution.  Instead, the @samp{-I} option should
-not impose a line length limit (apart from any limit imposed by the
-operating system) and so one might consider this limitation to be a
-bug.  A better solution would be to allow @code{xargs -I} to
-automatically move to a larger value for the @samp{-s} option when
-this is needed.
-
-This sort of problem doesn't occur with the output of @code{find}
-because it emits just one filename per line.
-
-@node Querying
-@subsection Querying
-
-To ask the user whether to execute a command on a single file, you can
-use the @code{find} primary @samp{-okdir} instead of @samp{-execdir},
-and the @code{find} primary @samp{-ok} instead of @samp{-exec}:
-
-@deffn Action -okdir command ;
-Like @samp{-execdir} (@pxref{Single File}), but ask the user first.
-If the user does not agree to run the command, just return false.
-Otherwise, run it, with  standard input redirected from
-@file{/dev/null}.
-
-This action may not be specified together with the @samp{-files0-from} option.
-
-The response to the prompt is matched against a pair of regular
-expressions to determine if it is a yes or no response.  These regular
-expressions are obtained from the system (@code{nl_langinfo} items
-YESEXPR and NOEXPR are used) if the @env{POSIXLY_CORRECT} environment
-variable is set and the system has such patterns available.  Otherwise,
-@code{find}'s message translations are used.  In either case, the
-@env{LC_MESSAGES} environment variable will determine the regular
-expressions used to determine if the answer is affirmative or negative.
-The interpretation of the regular expressions themselves will be
-affected by the environment variables @env{LC_CTYPE} (character
-classes) and @env{LC_COLLATE} (character ranges and equivalence
-classes).
-@end deffn
-
-@deffn Action -ok command ;
-This insecure variant of the @samp{-okdir} action is specified by
-POSIX.  The main difference is that the command is executed in the
-directory from which @code{find} was invoked, meaning that @samp{@{@}}
-is expanded to a relative path starting with the name of one of the
-starting directories, rather than just the basename of the matched
-file.  If the command is run, its standard input is redirected from
-@file{/dev/null}.
-
-This action may not be specified together with the @samp{-files0-from} option.
-@end deffn
-
-When processing multiple files with a single command, to query the
-user you give @code{xargs} the following option.  When using this
-option, you might find it useful to control the number of files
-processed per invocation of the command (@pxref{Limiting Command
-Size}).
-
-@table @code
-@item --interactive
-@itemx -p
-Prompt the user about whether to run each command line and read a line
-from the terminal.  Only run the command line if the response starts
-with @samp{y} or @samp{Y}.  Implies @samp{-t}.
-@end table
-
-@node Delete Files
-@section Delete Files
-
-@deffn Action -delete
-Delete files or directories; true if removal succeeded.  If the
-removal failed, an error message is issued and @code{find}'s exit status
-will be nonzero (when it eventually exits).
-
-@quotation Warning
-Don't forget that @code{find} evaluates the command line as an expression,
-so putting @samp{-delete} first will make @code{find} try to delete everything
-below the starting points you specified.
-@end quotation
-
-The use of the @samp{-delete} action on the command line automatically
-turns on the @samp{-depth} option.
-As in turn @samp{-depth} makes @samp{-prune} ineffective, the @samp{-delete}
-action cannot usefully be combined with @samp{-prune}.
-
-Often, the user might want to test a @code{find} command line with @samp{-print}
-prior to adding @samp{-delete} for the actual removal run.  To avoid surprising
-results, it is usually best to remember to use @samp{-depth} explicitly during
-those earlier test runs.
-
-See @ref{Cleaning Up} for a deeper discussion about good use cases of the
-@samp{-delete} action and those with surprising results.
-
-The @samp{-delete} action will fail to remove a directory unless it is empty.
-
-Together with the @samp{-ignore_readdir_race} option, @code{find} will
-ignore errors of the @samp{-delete} action in the case the file has disappeared
-since the parent directory was read: it will not output an error diagnostic, not
-change the exit code to nonzero, and the return code of the @samp{-delete}
-action will be true.
-@end deffn
 
 @node Adding Tests
 @section Adding Tests
@@ -3070,43 +2287,7 @@ The @code{cut} program removes everything after the file name from the
 output of @code{file}.
 
 However, using @code{xargs} can present important security problems
-(@pxref{Security Considerations}).  These can be avoided by using
-@samp{-execdir}.  The @samp{-execdir} action is also a useful way of
-putting your own test in the middle of a set of other tests or actions
-for @code{find} (for example, you might want to use @samp{-prune}).
-
-@c Idea from Martin Weitzel.
-To place a special test somewhere in the middle of a @code{find}
-expression, you can use @samp{-execdir} (or, less securely,
-@samp{-exec}) to run a program that performs the test.  Because
-@samp{-execdir} evaluates to the exit status of the executed program,
-you can use a program (which can be a shell script) that tests for a
-special attribute and make it exit with a true (zero) or false
-(non-zero) status.  It is a good idea to place such a special test
-@emph{after} the builtin tests, because it starts a new process which
-could be avoided if a builtin test evaluates to false.
-
-Here is a shell script called @code{unstripped} that checks whether
-its argument is an unstripped binary file:
-
-@example
-#! /bin/sh
-file "$1" | grep "not stripped" >/dev/null
-@end example
-
-
-This script relies on the shell exiting with the status of
-the last command in the pipeline, in this case @code{grep}.  The
-@code{grep} command exits with a true status if it found any matches,
-false if not.  Here is an example of using the script (assuming it is
-in your search path).  It lists the stripped executables (and shell
-scripts) in the file @file{sbins} and the unstripped ones in
-@file{ubins}.
-
-@example
-find /usr/local -type f -perm /a=x \
-  \( -execdir unstripped '@{@}' \; -fprint ubins -o -fprint sbins \)
-@end example
+(@pxref{Security Considerations}).
 
 
 @node Databases
@@ -3543,9 +2724,9 @@ problems, and consequently cannot be turned off:
 
 @itemize @minus
 @item
-Use of an unrecognised backslash escape sequence with @samp{-fprintf}
+Use of an unrecognised backslash escape sequence with @samp{-printf}
 @item
-Use of an unrecognised formatting directive with @samp{-fprintf}
+Use of an unrecognised formatting directive with @samp{-printf}
 @end itemize
 
 @node Optimisation Options
@@ -3987,7 +3168,7 @@ names read from standard input.
 Also, unquoted blanks do not terminate arguments;
 instead, the input is split at newlines only.
 If @var{replace-str} is omitted (omitting it is allowed only for @samp{-i}
-and @samp{--replace}), it defaults to @samp{@{@}} (like for @samp{find -exec}).
+and @samp{--replace}), it defaults to @samp{@{@}}.
 Implies @samp{-x} and @samp{-L 1}.
 The @samp{-i} option is deprecated in favour of the @samp{-I} option.
 
@@ -4062,8 +3243,7 @@ Exit if the size (see the @samp{-s} option) is exceeded.
 @itemx -P @var{max-procs}
 Run simultaneously up to @var{max-procs} processes at once; the default is 1.  If
 @var{max-procs} is 0, @code{xargs} will run as many processes as
-possible simultaneously.   @xref{Controlling Parallelism}, for
-information on dynamically controlling parallelism.
+possible simultaneously.
 
 @item --process-slot-var=@var{environment-variable-name}
 Set the environment variable @env{environment-variable-name} to a
@@ -4114,23 +3294,6 @@ manipulations.  However, some care must be taken to prevent problems,
 for example unwanted interpretation of shell metacharacters.
 
 This command moves a set of files into an archive directory:
-
-@example
-find /foo -maxdepth 1 -atime +366 -exec mv @{@} /archive \;
-@end example
-
-However, this will only move one file at a time.  We cannot in this
-case use @code{-exec ... +} because the matched file names are added
-at the end of the command line, while the destination directory would
-need to be specified last.  We also can't use @code{xargs} in the
-obvious way for the same reason.  One way of working around this
-problem is to make use of the special properties of GNU @code{mv}; it
-has a @code{-t} option that allows specifying the target directory
-before the list of files to be moved.  However, while this
-technique works for GNU @code{mv}, it doesn't solve the more general
-problem.
-
-Here is a more general technique for solving this problem:
 
 @example
 find /foo -maxdepth 1 -atime +366 -print0 |
@@ -4238,58 +3401,34 @@ The POSIX standard specifies that this variable affects the pattern
 matching to be used for the @samp{-name} option.  GNU find uses the
 GNU version of the @code{fnmatch} library function.
 
-This variable also affects the interpretation of the response to
-@code{-ok}; while the @env{LC_MESSAGES} variable selects the actual
-pattern used to interpret the response to @code{-ok}, the interpretation
-of any bracket expressions in the pattern will be affected by the
-@env{LC_COLLATE} variable.
-
 @item LC_CTYPE
 This variable affects the treatment of character classes used in
 regular expression and with
 the @samp{-name} test, if the @code{fnmatch} function supports this.
 
-This variable also affects the interpretation of any character classes
-in the regular expressions used to interpret the response to the
-prompt issued by @code{-ok}.  The @env{LC_CTYPE} environment variable will
+The @env{LC_CTYPE} environment variable will
 also affect which characters are considered to be unprintable when
-filenames are printed (@pxref{Unusual Characters in File Names}).
+filenames are printed.
 
 @item LC_MESSAGES
-Determines the locale to be used for internationalised messages,
-including the interpretation of the response to the prompt made by the
-@code{-ok} action.
+Determines the locale to be used for internationalised messages.
 
 @item NLSPATH
 Determines the location of the internationalisation message catalogues.
 
-@item PATH
-Affects the directories which are searched to find the executables
-invoked by @samp{-exec}, @samp{-execdir} @samp{-ok} and @samp{-okdir}.
-If the @env{PATH} environment variable includes the current directory
-(by explicitly including @samp{.} or by having an empty element), and
-the find command line includes @samp{-execdir} or @samp{-okdir},
-@code{find} will refuse to run.  @xref{Security Considerations}, for a
-more detailed discussion of security matters.
-
 @item POSIXLY_CORRECT
-Determines the block size used by @samp{-ls} and @samp{-fls}.  If
+Determines the block size used by @samp{-ls}.  If
 @env{POSIXLY_CORRECT} is set, blocks are units of 512 bytes.  Otherwise
 they are units of 1024 bytes.
 
 Setting this variable also turns off warning messages (that is, implies
-@samp{-nowarn}) by default, because POSIX requires that apart from
-the output for @samp{-ok}, all messages printed on standard error are
-diagnostics and must result in a non-zero exit status.
-
-When @env{POSIXLY_CORRECT} is set, the response to the prompt made by the
-@code{-ok} action is interpreted according to the system's message
-catalogue, as opposed to according to @code{find}'s own message
-translations.
+@samp{-nowarn}) by default, because POSIX requires that all messages
+printed on standard error are diagnostics and must result in a non-zero
+exit status.
 
 @item TZ
 Affects the time zone used for some of the time-related format
-directives of @samp{-printf} and @samp{-fprintf}.
+directives of @samp{-printf}.
 @end table
 
 
@@ -4304,7 +3443,6 @@ common real-world problems.
 @menu
 * Viewing And Editing::
 * Archiving::
-* Cleaning Up::
 * Strange File Names::
 * Fixing Permissions::
 * Classifying Files::
@@ -4411,99 +3549,6 @@ find . -depth -print0 | cpio -0o -Hnewc |
   rsh @var{other-machine} "cd `pwd` && cpio -i0dum"
 @end example
 
-@node Cleaning Up
-@section Cleaning Up
-
-@c Idea from Jim Meyering.
-This section gives examples of removing unwanted files in various
-situations.  Here is a command to remove the CVS backup files created
-when an update requires a merge:
-
-@example
-find . -name '.#*' -print0 | xargs -0r rm -f
-@end example
-
-If your @code{find} command removes directories, you may find that
-you get a spurious error message when @code{find} tries to recurse
-into a directory that has now been removed.  Using the @samp{-depth}
-option will normally resolve this problem.
-
-@c What does the following sentence mean? Why is -delete safer? --kasal
-@c The command above works, but the following is safer:
-
-It is also possible to use the @samp{-delete} action:
-
-@example
-find . -depth -name '.#*' -delete
-@end example
-
-@c Idea from Franc,ois Pinard.
-You can run this command to clean out your clutter in @file{/tmp}.
-You might place it in the file your shell runs when you log out
-(@file{.bash_logout}, @file{.logout}, or @file{.zlogout}, depending on
-which shell you use).
-
-@example
-find /tmp -depth -user "$LOGNAME" -type f -delete
-@end example
-
-@c Idea from Noah Friedman.
-To remove old Emacs backup and auto-save files, you can use a command
-like the following.  It is especially important in this case to use
-null-terminated file names because Emacs packages like the VM mailer
-often create temporary file names with spaces in them, like
-@file{#reply to David J. MacKenzie<1>#}.
-
-@example
-find ~ \( -name '*~' -o -name '#*#' \) -print0 |
-  xargs --no-run-if-empty --null rm -vf
-@end example
-
-Removing old files from @file{/tmp} is commonly done from @code{cron}:
-
-@c Idea from Kaveh Ghazi.
-@example
-find /tmp /var/tmp -depth -not        -type d -mtime +3 -delete
-find /tmp /var/tmp -depth -mindepth 1 -type d -empty    -delete
-@end example
-
-The second @code{find} command above cleans out empty directories
-depth-first (@samp{-delete} implies @samp{-depth} anyway), hoping that
-the parents become empty and can be removed too.  It uses
-@samp{-mindepth} to avoid removing @file{/tmp} itself if it becomes
-totally empty.
-
-
-Lastly, an example of a program that almost certainly does not do what
-the user intended:
-
-@c inspired by Savannah bug #20865 (Bruno De Fraine)
-@example
-find dirname -delete -name quux
-@end example
-
-If the user hoped to delete only files named @file{quux} they will get
-an unpleasant surprise; this command will attempt to delete everything
-at or below the starting point @file{dirname}.  This is because
-@code{find} evaluates the items on the command line as an expression.
-The @code{find} program will normally execute an action if the
-preceding action succeeds.  Here, there is no action or test before
-the @samp{-delete} so it will always be executed.  The @samp{-name
-quux} test will be performed for files we successfully deleted, but
-that test has no effect since @samp{-delete} also disables the default
-@samp{-print} operation.   So the above example will probably delete a
-lot of files the user didn't want to delete.
-
-This command is also likely to do something you did not intend:
-@example
-find dirname -path dirname/foo -prune -o -delete
-@end example
-
-Because @samp{-delete} turns on @samp{-depth}, the @samp{-prune}
-action has no effect and files in @file{dirname/foo} will be deleted
-too.
-
-
 @node Strange File Names
 @section Strange File Names
 
@@ -4513,8 +3558,8 @@ too.
 @c Subject: Unix - Frequently Asked Questions (2/7) [Frequent posting]
 @c Subject: How do I remove a file with funny characters in the filename ?
 @c Date: Thu Mar 18 17:16:55 EST 1993
-@code{find} can help you remove or rename a file with strange
-characters in its name.  People are sometimes stymied by files whose
+@code{rfind} can help you identify files with strange characters in
+their names.  People are sometimes stymied by files whose
 names contain characters such as spaces, tabs, control characters, or
 characters with the high bit set.  The simplest way to remove such
 files is:
@@ -4524,42 +3569,12 @@ rm -i @var{some*pattern*that*matches*the*problem*file}
 @end example
 
 @code{rm} asks you whether to remove each file matching the given
-pattern.  If you are using an old shell, this approach might not work
-if the file name contains a character with the high bit set; the shell
-may strip it off.  A more reliable way is:
-
-@example
-find . -maxdepth 1 @var{tests} -okdir rm '@{@}' \;
-@end example
-
-@noindent
-where @var{tests} uniquely identify the file.  The @samp{-maxdepth 1}
-option prevents @code{find} from wasting time searching for the file
-in any subdirectories; if there are no subdirectories, you may omit
-it.  A good way to uniquely identify the problem file is to figure out
-its inode number; use
+pattern.  You can use @code{rfind} to identify the problem file by
+its inode number:
 
 @example
 ls -i
-@end example
-
-Suppose you have a file whose name contains control characters, and
-you have found that its inode number is 12345.  This command prompts
-you for whether to remove it:
-
-@example
-find . -maxdepth 1 -inum 12345 -okdir rm -f '@{@}' \;
-@end example
-
-If you don't want to be asked, perhaps because the file name may
-contain a strange character sequence that will mess up your screen
-when printed, then use @samp{-execdir} instead of @samp{-okdir}.
-
-If you want to rename the file instead, you can use @code{mv} instead
-of @code{rm}:
-
-@example
-find . -maxdepth 1 -inum 12345 -okdir mv '@{@}' @var{new-file-name} \;
+rfind . -maxdepth 1 -inum 12345 -print
 @end example
 
 @node Fixing Permissions
@@ -4591,18 +3606,10 @@ different criteria, you can use the comma operator to perform multiple
 independent tests on the files.  Here is an example:
 
 @example
-find / -type d \( -perm -o=w -fprint allwrite , \
-  -perm -o=x -fprint allexec \)
+rfind / -type d -perm -o=w -print
 
-echo "Directories that can be written to by everyone:"
-cat allwrite
-echo ""
-echo "Directories with search permissions for everyone:"
-cat allexec
+rfind / -type d -perm -o=x -print
 @end example
-
-@code{find} has only to make one scan through the directory tree
-(which is one of the most time consuming parts of its work).
 
 @node Worked Examples
 @chapter Worked Examples
@@ -4617,355 +3624,10 @@ This chapter describes a number of useful tasks that are commonly
 performed, and compares the different ways of achieving them.
 
 @menu
-* Deleting Files::
 * Copying A Subset of Files::
 * Updating A Timestamp File::
 * Finding the Shallowest Instance::
 @end menu
-
-@node Deleting Files
-@section Deleting Files
-
-One of the most common tasks that @code{find} is used for is locating
-files that can be deleted.  This might include:
-
-@itemize
-@item
-Files last modified more than 3 years ago which haven't been accessed
-for at least 2 years
-@item
-Files belonging to a certain user
-@item
-Temporary files which are no longer required
-@end itemize
-
-This example concentrates on the actual deletion task rather than on
-sophisticated ways of locating the files that need to be deleted.
-We'll assume that the files we want to delete are old files underneath
-@file{/var/tmp/stuff}.
-
-@subsection The Traditional Way
-
-The traditional way to delete files in @file{/var/tmp/stuff} that have
-not been modified in over 90 days would have been:
-
-@smallexample
-find /var/tmp/stuff -mtime +90 -exec /bin/rm @{@} \;
-@end smallexample
-
-The above command uses @samp{-exec} to run the @code{/bin/rm} command
-to remove each file.  This approach works and in fact would have
-worked in Version 7 Unix in 1979.  However, there are a number of
-problems with this approach.
-
-
-The most obvious problem with the approach above is that it causes
-@code{find} to fork every time it finds a file that needs to delete,
-and the child process then has to use the @code{exec} system call to
-launch @code{/bin/rm}.   All this is quite inefficient.  If we are
-going to use @code{/bin/rm} to do this job, it is better to make it
-delete more than one file at a time.
-
-The most obvious way of doing this is to use the shell's command
-expansion feature:
-
-@smallexample
-/bin/rm `find /var/tmp/stuff -mtime +90 -print`
-@end smallexample
-or you could use the more modern form
-@smallexample
-/bin/rm $(find /var/tmp/stuff -mtime +90 -print)
-@end smallexample
-
-The commands above are much more efficient than the first attempt.
-However, there is a problem with them.  The shell has a maximum
-command length which is imposed by the operating system (the actual
-limit varies between systems).  This means that while the command
-expansion technique will usually work, it will suddenly fail when
-there are lots of files to delete.  Since the task is to delete
-unwanted files, this is precisely the time we don't want things to go
-wrong.
-
-There is also a second problem with this method.  We will discuss that
-below.
-
-@subsection Making Use of @code{xargs}
-
-So, is there a way to be more efficient in the use of @code{fork()}
-and @code{exec()} without running up against this limit?
-Yes, we can be almost optimally efficient by making use
-of the @code{xargs} command.  The @code{xargs} command reads arguments
-from its standard input and builds them into command lines.  We can
-use it like this:
-
-@smallexample
-find /var/tmp/stuff -mtime +90 -print | xargs /bin/rm
-@end smallexample
-
-For example if the files found by @code{find} are
-@file{/var/tmp/stuff/A},
-@file{/var/tmp/stuff/B} and
-@file{/var/tmp/stuff/C} then @code{xargs} might issue the commands
-
-@smallexample
-/bin/rm /var/tmp/stuff/A /var/tmp/stuff/B
-/bin/rm /var/tmp/stuff/C
-@end smallexample
-
-The above assumes that @code{xargs} has a very small maximum command
-line length.  The real limit is much larger but the idea is that
-@code{xargs} will run @code{/bin/rm} as many times as necessary to get
-the job done, given the limits on command line length.
-
-This usage of @code{xargs} is pretty efficient, and the @code{xargs}
-command is widely implemented (all modern versions of Unix offer it).
-So far then, the news is all good.  However, there is bad news too.
-
-@subsection Unusual characters in filenames
-
-Unix-like systems allow any characters to appear in file names with
-the exception of the ASCII NUL character and the slash.
-Slashes can occur in path names (as the directory separator) but
-not in the names of actual directory entries.  This means that the
-list of files that @code{xargs} reads could in fact contain white space
-characters -- spaces, tabs and newline characters.  Since by default,
-@code{xargs} assumes that the list of files it is reading uses white
-space as an argument separator, it cannot correctly handle the case
-where a filename actually includes white space.  This makes the
-default behaviour of @code{xargs} almost useless for handling
-arbitrary data.
-
-To solve this problem, GNU findutils introduced the @samp{-print0}
-action for @code{find}.  This uses the ASCII NUL character to separate
-the entries in the file list that it produces.  This is the ideal
-choice of separator since it is the only character that cannot appear
-within a path name.  The @samp{-0} option to @code{xargs} makes it
-assume that arguments are separated with ASCII NUL instead of white
-space.  It also turns off another misfeature in the default behaviour
-of @code{xargs}, which is that it pays attention to quote characters
-in its input.  Some versions of @code{xargs} also terminate when they
-see a lone @samp{_} in the input, but GNU @code{find} no longer does
-that (since it has become an optional behaviour in the Unix standard).
-
-So, putting @code{find -print0} together with @code{xargs -0} we get
-this command:
-
-@smallexample
-find /var/tmp/stuff -mtime +90 -print0 | xargs -0 /bin/rm
-@end smallexample
-
-The result is an efficient way of proceeding that correctly handles
-all the possible characters that could appear in the list of files to
-delete.  This is good news.  However, there is, as I'm sure you're
-expecting, also more bad news.  The problem is that this is not a
-portable construct.  Support for @samp{-print0} is not universal.
-
-Although some other versions of Unix (notably BSD-derived ones)
-support @samp{-print0}, this is only required in POSIX from Issue 8
-(IEEE Std 1003.1-2024). So, is there a more universal mechanism?
-
-@subsection Going back to @code{-exec}
-
-There is indeed a more universal mechanism, which is a slight
-modification to the @samp{-exec} action.  The normal @samp{-exec}
-action assumes that the command to run is terminated with a semicolon
-(the semicolon normally has to be quoted in order to protect it from
-interpretation as the shell command separator).  The SVR4 edition of
-Unix introduced a slight variation, which involves terminating the
-command with @samp{+} instead:
-
-@smallexample
-find /var/tmp/stuff -mtime +90 -exec /bin/rm @{@} \+
-@end smallexample
-
-The above use of @samp{-exec} causes @code{find} to build up a long
-command line and then issue it.  This can be less efficient than some
-uses of @code{xargs}; for example @code{xargs} allows building up
-new command lines while the previous command is still executing, and
-allows specifying a number of commands to run in parallel.
-However, the @code{find @dots{} -exec @dots{} +} construct has the advantage
-of wide portability.  GNU findutils did not support @samp{-exec @dots{} +}
-until version 4.2.12; one of the reasons for this is that it already
-had the @samp{-print0} action in any case.
-
-
-@subsection A more secure version of @code{-exec}
-
-The command above seems to be efficient and portable.  However,
-within it lurks a security problem.  The problem is shared with
-all the commands we've tried in this worked example so far, too.  The
-security problem is a race condition; that is, if it is possible for
-somebody to manipulate the filesystem that you are searching while you
-are searching it, it is possible for them to persuade your @code{find}
-command to cause the deletion of a file that you can delete but they
-normally cannot.
-
-The problem occurs because the @samp{-exec} action is defined by the
-POSIX standard to invoke its command with the same working directory
-as @code{find} had when it was started.  This means that the arguments
-which replace the @{@} include a relative path from @code{find}'s
-starting point down the file that needs to be deleted.  For example,
-
-@smallexample
-find /var/tmp/stuff -mtime +90 -exec /bin/rm @{@} \+
-@end smallexample
-
-might actually issue the command:
-
-@smallexample
-/bin/rm /var/tmp/stuff/A /var/tmp/stuff/B /var/tmp/stuff/passwd
-@end smallexample
-
-Notice the file @file{/var/tmp/stuff/passwd}.  Likewise, the command:
-
-@smallexample
-cd /var/tmp && find stuff -mtime +90 -exec /bin/rm @{@} \+
-@end smallexample
-
-might actually issue the command:
-
-@smallexample
-/bin/rm stuff/A stuff/B stuff/passwd
-@end smallexample
-
-If an attacker can rename @file{stuff} to something else (making use
-of their write permissions in @file{/var/tmp}) they can replace it
-with a symbolic link to @file{/etc}.  That means that the
-@code{/bin/rm} command will be invoked on @file{/etc/passwd}.  If you
-are running your @code{find} command as root, the attacker has just managed
-to delete a vital file.  All they needed to do to achieve this was
-replace a subdirectory with a symbolic link at the vital moment.
-
-There is however, a simple solution to the problem.  This is an action
-which works a lot like @code{-exec} but doesn't need to traverse a
-chain of directories to reach the file that it needs to work on.  This
-is the @samp{-execdir} action, which was introduced by the BSD family
-of operating systems.   The command,
-
-@smallexample
-find /var/tmp/stuff -mtime +90 -execdir /bin/rm @{@} \+
-@end smallexample
-
-might delete a set of files by performing these actions:
-
-@enumerate
-@item
-Change directory to /var/tmp/stuff/foo
-@item
-Invoke @code{/bin/rm ./file1 ./file2 ./file3}
-@item
-Change directory to /var/tmp/stuff/bar
-@item
-Invoke @code{/bin/rm ./file99 ./file100 ./file101}
-@end enumerate
-
-This is a much more secure method.  We are no longer exposed to a race
-condition.  For many typical uses of @code{find}, this is the best
-strategy.   It's reasonably efficient, but the length of the command
-line is limited not just by the operating system limits, but also by
-how many files we actually need to delete from each directory.
-
-Is it possible to do any better?   In the case of general file
-processing, no.  However, in the specific case of deleting files it is
-indeed possible to do better.
-
-@subsection Using the @code{-delete} action
-
-The most efficient and secure method of solving this problem is to use
-the @samp{-delete} action:
-
-@smallexample
-find /var/tmp/stuff -mtime +90 -delete
-@end smallexample
-
-This alternative is more efficient than any of the @samp{-exec} or
-@samp{-execdir} actions, since it entirely avoids the overhead of
-forking a new process and using @code{exec} to run @code{/bin/rm}.  It
-is also normally more efficient than @code{xargs} for the same
-reason.   The file deletion is performed from the directory containing
-the entry to be deleted, so the @samp{-delete} action has the same
-security advantages as the @samp{-execdir} action has.
-
-The @samp{-delete} action was introduced by the BSD family of
-operating systems.
-
-@subsection Improving things still further
-
-Is it possible to improve things still further?  Not without either
-modifying the system library to the operating system or having more specific
-knowledge of the layout of the filesystem and disk I/O subsystem, or
-both.
-
-The @code{find} command traverses the filesystem, reading
-directories.  It then issues a separate system call for each file to
-be deleted.  If we could modify the operating system, there are
-potential gains that could be made:
-
-@itemize
-@item
-We could have a system call to which we pass more than one filename
-for deletion
-@item
-Alternatively, we could pass in a list of inode numbers (on GNU/Linux
-systems, @code{readdir()} also returns the inode number of each
-directory entry) to be deleted.
-@end itemize
-
-The above possibilities sound interesting, but from the kernel's point
-of view it is difficult to enforce standard Unix access controls for
-such processing by inode number.  Such a facility would probably
-need to be restricted to the superuser.
-
-Another way of improving performance would be to increase the
-parallelism of the process.  For example if the directory hierarchy we
-are searching is actually spread across a number of disks, we might
-somehow be able to arrange for @code{find} to process each disk in
-parallel.  In practice GNU @code{find} doesn't have such an intimate
-understanding of the system's filesystem layout and disk I/O
-subsystem.
-
-However, since the system administrator can have such an understanding
-they can take advantage of it like so:
-
-@smallexample
-find /var/tmp/stuff1 -mtime +90 -delete &
-find /var/tmp/stuff2 -mtime +90 -delete &
-find /var/tmp/stuff3 -mtime +90 -delete &
-find /var/tmp/stuff4 -mtime +90 -delete &
-wait
-@end smallexample
-
-In the example above, four separate instances of @code{find} are used
-to search four subdirectories in parallel.  The @code{wait} command
-simply waits for all of these to complete.  Whether this approach is
-more or less efficient than a single instance of @code{find} depends
-on a number of things:
-
-@itemize
-@item
-Are the directories being searched in parallel actually on separate
-disks?  If not, this parallel search might just result in a lot of
-disk head movement and so the speed might even be slower.
-@item
-Other activity - are other programs also doing things on those disks?
-@end itemize
-
-
-@subsection Conclusion
-
-The fastest and most secure way to delete files with the help of
-@code{find} is to use @samp{-delete}.  Using @code{xargs -0 -P N} can
-also make effective use of the disk, but it is not as secure.
-
-In the case where we're doing things other than deleting files, the
-most secure alternative is @samp{-execdir @dots{} +}, but this is not as
-portable as the insecure action @samp{-exec @dots{} +}.
-
-The @samp{-delete} action is not completely portable, but the only
-other possibility which is as secure (@samp{-execdir}) is no more
-portable.  The most efficient portable alternative is @samp{-exec
-@dots{}+}, but this is insecure and isn't supported by versions of GNU
-findutils prior to 4.2.12.
 
 @node Copying A Subset of Files
 @section Copying A Subset of Files
@@ -5021,64 +3683,9 @@ useful for the second set of tools to know if the files have recently
 been changed.  It might be useful, for example, to have a 'timestamp'
 file which gives the timestamp on the newest file in the collection.
 
-We can use @code{find} to achieve this, but there are several
-different ways to do it.
+We can use @code{rfind} to identify the newest file.
 
-@subsection Updating the Timestamp The Wrong Way
-
-The obvious but wrong answer is just to use @samp{-newer}:
-
-@smallexample
-find subdir -type f -newer timestamp -exec touch -r @{@} timestamp \;
-@end smallexample
-
-This does the right sort of thing but has a bug.  Suppose that two
-files in the subdirectory have been updated, and that these are called
-@file{file1} and @file{file2}.  The command above will update
-@file{timestamp} with the modification time of @file{file1} or that of
-@file{file2}, but we don't know which one.  Since the timestamps on
-@file{file1} and @file{file2} will in general be different, this could
-well be the wrong value.
-
-One solution to this problem is to modify @code{find} to recheck the
-modification time of @file{timestamp} every time a file is to be
-compared against it, but that will reduce the performance of
-@code{find}.
-
-@subsection Using the test utility to compare timestamps
-
-The @code{test} command can be used to compare timestamps:
-
-@smallexample
-find subdir -type f -exec test @{@} -nt timestamp \; -exec touch -r @{@} timestamp \;
-@end smallexample
-
-This will ensure that any changes made to the modification time of
-@file{timestamp} that take place during the execution of @code{find}
-are taken into account.  This resolves our earlier problem, but
-unfortunately this runs much more slowly.
-
-@subsection A combined approach
-
-We can of course still use @samp{-newer} to cut down on the number of
-calls to @code{test}:
-
-@smallexample
-find subdir -type f -newer timestamp -and \
-     -exec test @{@} -nt timestamp \; -and \
-     -exec touch -r @{@} timestamp \;
-@end smallexample
-
-Here, the @samp{-newer} test excludes all the files which are
-definitely older than or the same age as
-the timestamp, but all the files which are newer
-than the old value of the timestamp are compared against the current
-updated timestamp.
-
-This is indeed faster in general, but the speed difference will depend
-on how many updated files there are.
-
-@subsection Using @code{-printf} and @code{sort} to compare timestamps
+@subsection Using @code{-printf} and @code{sort} to find the newest file
 
 It is possible to use the @samp{-printf} action to abandon the use of
 @code{test} entirely:
@@ -5130,51 +3737,6 @@ to cope with white space within file names, and adjusting it to do so
 would require a rather complex shell script.
 
 
-@subsection Coping with odd filenames too
-
-We can fix both of these problems (looping and problems with white
-space), and do things more efficiently too.  The following command
-works with newlines and doesn't need to sort the list of filenames.
-
-@smallexample
-find subdir -type f -newer timestamp -printf "%A@@:%p\0" |
-   perl -0 newest.pl |
-   xargs --no-run-if-empty --null --replace \
-      find @{@} -maxdepth 0 -newer timestamp -exec touch -r @{@} timestamp \;
-@end smallexample
-
-The first @code{find} command generates a list of files which are
-newer than (and not the same age as) the original timestamp file,
-and prints a list of them with
-their timestamps.  The @file{newest.pl} script simply filters out all
-the filenames which have timestamps which are older than whatever the
-newest file is:
-
-@smallexample
-@verbatim
-#! /usr/bin/perl -0
-my @newest = ();
-my $latest_stamp = undef;
-while (<>) {
-    my ($stamp, $name) = split(/:/);
-    if (!defined($latest_stamp) || ($tstamp > $latest_stamp)) {
-        $latest_stamp = $stamp;
-        @newest = ();
-    }
-    if ($tstamp >= $latest_stamp) {
-        push @newest, $name;
-    }
-}
-print join("\0", @newest);
-@end verbatim
-@end smallexample
-
-This prints a list of zero or more files, all of which are newer than
-the original timestamp file, and which have the same timestamp as each
-other, to the nearest second.  The second @code{find} command takes
-each resulting file one at a time, and if that is newer than the
-timestamp file, the timestamp is updated.
-
 @node Finding the Shallowest Instance
 @section Finding the Shallowest Instance
 
@@ -5206,12 +3768,9 @@ searching subdirectories inside projects whose SCM directory we
 already found.
 
 @smallexample
-find repo/ \
-  \( \
-    -exec test -d @{@}/.svn \; -or \
-    -exec test -d @{@}/.git \; -or \
-    -exec test -d @{@}/CVS \; \
-  \) -print -prune
+rfind repo/ -type d \
+  \( -name .svn -or -name .git -or -name CVS \) \
+  -printf "%h\n" -prune
 @end smallexample
 
 Output:
@@ -5223,11 +3782,9 @@ repo/gnu/project3
 repo/project4
 @end smallexample
 
-In this example, @command{test} is used to tell if we are currently
-examining a directory which appears to be a project's root directory
-(because it has an SCM subdirectory).  When we find a project root,
-there is no need to search inside it, and @code{-prune} makes sure
-that we descend no further.
+In this example, @code{rfind} locates SCM directories by name and
+prints their parent directory using @code{%h}.  When we find a match,
+@code{-prune} makes sure that we descend no further.
 
 For large, complex trees like the Linux kernel, this will prevent
 searching a large portion of the structure, saving a good deal of
@@ -5330,22 +3887,19 @@ that might fall outside the scope of your policy.
 @section Security Considerations for @code{find}
 
 
-Some of the actions @code{find} might take have a direct effect;
-these include @code{-exec} and @code{-delete}.  However, it is also
+It is
 common to use @code{-print} explicitly or implicitly, and so if
-@code{find} produces the wrong list of file names, that can also be a
-security problem; consider the case for example where @code{find} is
-producing a list of files to be deleted.
+@code{rfind} produces the wrong list of file names, that can be a
+security problem.
 
 We normally assume that the @code{find} command line expresses the
 file selection criteria and actions that the user had in mind -- that
 is, the command line is ``trusted'' data.
 
-From a security analysis point of view, the output of @code{find}
+From a security analysis point of view, the output of @code{rfind}
 should be correct; that is, the output should contain only the names
 of those files which meet the user's criteria specified on the command
-line.  This applies for the @code{-exec} and @code{-delete} actions;
-one can consider these to be part of the output.
+line.
 
 On the other hand, the contents of the filesystem can be manipulated
 by other people, and hence we regard this as ``untrusted'' data.  This
@@ -5370,53 +3924,9 @@ filesystem which would not normally be included in the search
 (defeating the @code{-prune} action for example).
 
 @menu
-* Problems with -exec and filenames::
 * Changing the Current Working Directory::
-* Race Conditions with -exec::
 * Race Conditions with -print and -print0::
 @end menu
-
-@node Problems with -exec and filenames
-@subsection Problems with @code{-exec} and filenames
-
-It is safe in many cases to use the @samp{-execdir} action with any
-file name.  Because @samp{-execdir} prefixes the arguments it passes
-to programs with @samp{./}, you will not accidentally pass an argument
-which is interpreted as an option.  For example the file @file{-f}
-would be passed to @code{rm} as @file{./-f}, which is harmless.
-
-However, your degree of safety does depend on the nature of the
-program you are running.  For example constructs such as these two commands
-
-@example
-# risky
-find -exec sh -c "something @{@}" \;
-find -execdir sh -c "something @{@}" \;
-@end example
-
-are very dangerous.  The reason for this is that the @samp{@{@}} is
-expanded to a filename which might contain a semicolon or other
-characters special to the shell.  If for example someone creates the
-file @file{/tmp/foo; rm -rf $HOME} then the two commands above could
-delete someone's home directory.
-
-So for this reason do not run any command which will pass untrusted
-data (such as the names of files) to commands which interpret
-arguments as commands to be further interpreted (for example
-@samp{sh}).
-
-In the case of the shell, there is a clever workaround for this
-problem:
-
-@example
-# safer
-find -exec sh -c 'something "$@@"' sh @{@} \;
-find -execdir sh -c 'something "$@@"' sh @{@} \;
-@end example
-
-This approach is not guaranteed to avoid every problem, but it is much
-safer than substituting data of an attacker's choice into the text of
-a shell command.
 
 @node Changing the Current Working Directory
 @subsection Changing the Current Working Directory
@@ -5521,7 +4031,7 @@ carries on as normal.  This is the usual case for automounters.
 Where an attacker is trying to exploit a race condition, the problem
 may not have gone away on the second attempt.  If this is the case,
 @code{find} will issue a warning message and then ignore that
-subdirectory.  When this happens, actions such as @samp{-exec} or
+subdirectory.  When this happens, actions such as
 @samp{-print} may already have taken place for the problematic
 subdirectory.  This is because @code{find} applies tests and actions
 to directories before searching within them (unless @samp{-depth} was
@@ -5533,60 +4043,6 @@ done with the directory are to move into it and back out to the
 original parent.  No operations would have been performed within that
 directory.
 
-@node Race Conditions with -exec
-@subsection Race Conditions with @code{-exec}
-
-The @samp{-exec} action causes another program to be run.  It passes
-to the program the name of the file which is being considered at the
-time.  The invoked program will typically then perform some action
-on that file.  Once again, there is a race condition which can be
-exploited here.  We shall take as a specific example the command
-
-@example
-find /tmp -path /tmp/umsp/passwd -exec /bin/rm
-@end example
-
-In this simple example, we are identifying just one file to be deleted
-and invoking @code{/bin/rm} to delete it.  A problem exists because
-there is a time gap between the point where @code{find} decides that
-it needs to process the @samp{-exec} action and the point where the
-@code{/bin/rm} command actually issues the @code{unlink()} system
-call to delete the file from the filesystem.  Within this time period, an attacker can rename the
-@file{/tmp/umsp} directory, replacing it with a symbolic link to
-@file{/etc}.  There is no way for @code{/bin/rm} to determine that it
-is working on the same file that @code{find} had in mind.  Once the
-symbolic link is in place, the attacker has persuaded @code{find} to
-cause the deletion of the @file{/etc/passwd} file, which is not the
-effect intended by the command which was actually invoked.
-
-One possible defence against this type of attack is to modify the
-behaviour of @samp{-exec} so that the @code{/bin/rm} command is run
-with the argument @file{./passwd} and a suitable choice of working
-directory.  This would allow the normal sanity check that @code{find}
-performs to protect against this form of attack too.  Unfortunately,
-this strategy cannot be used as the POSIX standard specifies that the
-current working directory for commands invoked with @samp{-exec} must
-be the same as the current working directory from which @code{find}
-was invoked.  This means that the @samp{-exec} action is inherently
-insecure and can't be fixed.
-
-GNU @code{find} implements a more secure variant of the @samp{-exec}
-action, @samp{-execdir}.  The @samp{-execdir} action
-ensures that it is not necessary to dereference subdirectories to
-process target files.  The current directory used to invoke programs
-is the same as the directory in which the file to be processed exists
-(@file{/tmp/umsp} in our example, and only the basename of the file to
-be processed is passed to the invoked command, with a @samp{./}
-prepended (giving @file{./passwd} in our example).
-
-The @samp{-execdir} action refuses to do anything if the current
-directory is included in the @env{PATH} environment variable.  This
-is necessary because @samp{-execdir} runs programs in the same
-directory in which it finds files -- in general, such a directory
-might be writable by untrusted users.  For similar reasons,
-@samp{-execdir} does not allow @samp{@{@}} to appear in the name of
-the command to be run.
-
 @node Race Conditions with -print and -print0
 @subsection Race Conditions with @code{-print} and @code{-print0}
 
@@ -5596,7 +4052,7 @@ other command, perhaps with @code{xargs}.  Unfortunately, this means
 that there is an unavoidable time gap between @code{find} deciding
 that one or more files meet its criteria and the relevant command
 being executed.  For this reason, the @samp{-print} and @samp{-print0}
-actions are just as insecure as @samp{-exec}.
+actions are subject to race conditions.
 
 In fact, since the construction
 
@@ -5645,9 +4101,7 @@ longer contain an ``extra'' newline.
 
 This problem is an unavoidable consequence of the default behaviour of
 the @code{xargs} command, which is specified by the POSIX standard.
-The only ways to avoid this problem are either to avoid all use of
-@code{xargs} in favour for example of @samp{find -exec} or (where
-available) @samp{find -execdir}, or to use the @samp{-0} option, which
+The best way to avoid this problem is to use the @samp{-0} option, which
 ensures that @code{xargs} considers file names to be separated by
 ASCII NUL characters rather than whitespace.  However, useful as this
 option is, the POSIX standard did not make it mandatory prior to
@@ -5685,16 +4139,8 @@ following:
 @table @asis
 @item Informational use only
 Uses where the programs are used to prepare lists of file names upon
-which no further action will ever be taken.
-
-@item @samp{-delete}
-Use of the @samp{-delete} action with @code{find} to delete files
-which meet specified criteria
-
-@item @samp{-execdir}
-Use of the @samp{-execdir} action with @code{find} where the
-@env{PATH} environment variable contains directories which contain
-only trusted programs.
+which no further action will ever be taken.  @code{rfind} is designed
+for this use case, as it only supports read-only actions.
 @end table
 
 
@@ -5827,17 +4273,12 @@ explanation is that your system has a buggy implementation of
 @code{configure}, but which doesn't work properly.
 
 @item cannot fork
-This normally happens if you use the @code{-exec} action or
-something similar (@code{-ok} and so forth) but the system has run out
+This normally happens if the system has run out
 of free process slots.  This is either because the system is very busy
 and the system has reached its maximum process limit, or because you
 have a resource limit in place and you've reached it.  Check the
 system for runaway processes (with @code{ps}, if possible).  Some process
 slots are normally reserved for use by @samp{root}.
-
-@item some-program terminated by signal 99
-Some program which was launched with @code{-exec} or similar was killed
-with a fatal signal.  This is just an advisory message.
 @end table
 
 

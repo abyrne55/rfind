@@ -20,11 +20,9 @@ localedir = $(datadir)/locale
 noinst_LIBRARIES = libfindtools.a
 libfindtools_a_SOURCES = finddata.c fstype.c parser.c pred.c exec.c tree.c util.c sharefile.c print.c
 
-# We only build the version of find with fts (called "find"),
-# i.e., no longer the one called "oldfind".
-bin_PROGRAMS     = find
-find_SOURCES     = ftsfind.c
-man_MANS         = find.1
+bin_PROGRAMS     = rfind
+rfind_SOURCES    = ftsfind.c
+man_MANS         = rfind.1
 
 EXTRA_DIST = defs.h sharefile.h print.h $(man_MANS)
 AM_CPPFLAGS = -I../gl/lib -I$(top_srcdir)/lib -I$(top_srcdir)/gl/lib -DLOCALEDIR=\"$(localedir)\"

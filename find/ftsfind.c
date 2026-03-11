@@ -719,7 +719,7 @@ main (int argc, char **argv)
   if (argv[0])
     set_program_name (argv[0]);
   else
-    set_program_name ("find");
+    set_program_name ("rfind");
 
   record_initial_cwd ();
 

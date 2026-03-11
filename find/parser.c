@@ -94,19 +94,12 @@ static bool parse_cmin          (const struct parser_table*, char *argv[], int *
 static bool parse_cnewer        (const struct parser_table*, char *argv[], int *arg_ptr);
 static bool parse_comma         (const struct parser_table*, char *argv[], int *arg_ptr);
 static bool parse_daystart      (const struct parser_table*, char *argv[], int *arg_ptr);
-static bool parse_delete        (const struct parser_table*, char *argv[], int *arg_ptr);
 static bool parse_d             (const struct parser_table*, char *argv[], int *arg_ptr);
 static bool parse_depth         (const struct parser_table*, char *argv[], int *arg_ptr);
 static bool parse_empty         (const struct parser_table*, char *argv[], int *arg_ptr);
-static bool parse_exec          (const struct parser_table*, char *argv[], int *arg_ptr);
-static bool parse_execdir       (const struct parser_table*, char *argv[], int *arg_ptr);
 static bool parse_false         (const struct parser_table*, char *argv[], int *arg_ptr);
 static bool parse_files0_from   (const struct parser_table*, char *argv[], int *arg_ptr);
-static bool parse_fls           (const struct parser_table*, char *argv[], int *arg_ptr);
-static bool parse_fprintf       (const struct parser_table*, char *argv[], int *arg_ptr);
 static bool parse_follow        (const struct parser_table*, char *argv[], int *arg_ptr);
-static bool parse_fprint        (const struct parser_table*, char *argv[], int *arg_ptr);
-static bool parse_fprint0       (const struct parser_table*, char *argv[], int *arg_ptr);
 static bool parse_fstype        (const struct parser_table*, char *argv[], int *arg_ptr);
 static bool parse_gid           (const struct parser_table*, char *argv[], int *arg_ptr);
 static bool parse_group         (const struct parser_table*, char *argv[], int *arg_ptr);
@@ -131,8 +124,6 @@ static bool parse_noleaf        (const struct parser_table*, char *argv[], int *
 static bool parse_nogroup       (const struct parser_table*, char *argv[], int *arg_ptr);
 static bool parse_nouser        (const struct parser_table*, char *argv[], int *arg_ptr);
 static bool parse_nowarn        (const struct parser_table*, char *argv[], int *arg_ptr);
-static bool parse_ok            (const struct parser_table*, char *argv[], int *arg_ptr);
-static bool parse_okdir         (const struct parser_table*, char *argv[], int *arg_ptr);
 static bool parse_or            (const struct parser_table*, char *argv[], int *arg_ptr);
 static bool parse_path          (const struct parser_table*, char *argv[], int *arg_ptr);
 static bool parse_perm          (const struct parser_table*, char *argv[], int *arg_ptr);
@@ -170,10 +161,6 @@ static bool insert_type (char **argv, int *arg_ptr,
 static bool insert_regex (char *argv[], int *arg_ptr,
                           const struct parser_table *entry,
                           int regex_options);
-static bool insert_exec_ok (const char *action,
-                            const struct parser_table *entry,
-                            char *argv[],
-                            int *arg_ptr);
 static bool get_comp_type (const char **str,
                            enum comparison_type *comp_type);
 static bool get_relative_timestamp (const char *str,
@@ -186,7 +173,6 @@ static bool get_num (const char *str,
                      enum comparison_type *comp_type);
 static struct predicate* insert_num (char *argv[], int *arg_ptr,
                                      const struct parser_table *entry);
-static void open_output_file (const char *path, struct format_val *p);
 static void open_stdout (struct format_val *p);
 static bool stream_is_tty(FILE *fp);
 static bool parse_noop (const struct parser_table* entry,
@@ -287,16 +273,9 @@ static struct parser_table const parse_table[] =
   { ARG_TEST, "xtype",       parse_xtype,       pred_xtype      }, /* GNU */
 
   /* Actions.  */
-  { ARG_ACTION, "delete",    parse_delete,      pred_delete  }, /* GNU, Mac OS, FreeBSD */
-  { ARG_ACTION, "exec",      parse_exec,        pred_exec    }, /* POSIX */
-  { ARG_ACTION, "execdir",   parse_execdir,     pred_execdir }, /* *BSD, GNU */
-  { ARG_ACTION, "fls",       parse_fls,         pred_fls     }, /* GNU */
-  { ARG_ACTION, "fprint",    parse_fprint,      pred_fprint  }, /* GNU */
-  { ARG_ACTION, "fprint0",   parse_fprint0,     pred_fprint0 }, /* GNU */
-  { ARG_ACTION, "fprintf",   parse_fprintf,     pred_fprintf }, /* GNU */
+  /* rfind: removed -delete, -exec, -execdir, -fls, -fprint, -fprint0,
+     -fprintf, -ok, -okdir to prevent filesystem writes and command execution. */
   { ARG_ACTION, "ls",        parse_ls,          pred_ls      }, /* GNU, Unix */
-  { ARG_ACTION, "ok",        parse_ok,          pred_ok      }, /* POSIX */
-  { ARG_ACTION, "okdir",     parse_okdir,       pred_okdir   }, /* GNU (-execdir is BSD) */
   { ARG_ACTION, "print",     parse_print,       pred_print   }, /* POSIX */
   { ARG_ACTION, "print0",    parse_print0,      pred_print0  }, /* GNU */
   { ARG_ACTION, "printf",    parse_printf,      pred_fprintf }, /* GNU */
@@ -875,27 +854,6 @@ parse_daystart (const struct parser_table* entry, char **argv, int *arg_ptr)
 }
 
 static bool
-parse_delete (const struct parser_table* entry, char *argv[], int *arg_ptr)
-{
-  struct predicate *our_pred;
-  (void) argv;
-  (void) arg_ptr;
-
-  our_pred = insert_primary_noarg (entry);
-  our_pred->side_effects = our_pred->no_default_print = true;
-  /* -delete implies -depth */
-  options.do_dir_first = false;
-
-  /* We do not need stat information because we check for the case
-   * (errno==EISDIR) in pred_delete.
-   */
-  our_pred->need_stat = our_pred->need_type = false;
-
-  our_pred->est_success_rate = 1.0f;
-  return true;
-}
-
-static bool
 parse_depth (const struct parser_table* entry, char **argv, int *arg_ptr)
 {
   (void) entry;
@@ -929,18 +887,6 @@ parse_empty (const struct parser_table* entry, char **argv, int *arg_ptr)
   our_pred = insert_primary_noarg (entry);
   our_pred->est_success_rate = 0.01f; /* assume 1% of files are empty. */
   return true;
-}
-
-static bool
-parse_exec (const struct parser_table* entry, char **argv, int *arg_ptr)
-{
-  return insert_exec_ok ("-exec", entry, argv, arg_ptr);
-}
-
-static bool
-parse_execdir (const struct parser_table* entry, char **argv, int *arg_ptr)
-{
-  return insert_exec_ok ("-execdir", entry, argv, arg_ptr);
 }
 
 static bool
@@ -980,32 +926,15 @@ parse_files0_from (const struct parser_table* entry, char **argv, int *arg_ptr)
 }
 
 static bool
-insert_fls (const struct parser_table* entry, const char *filename)
+insert_fls (const struct parser_table* entry)
 {
   struct predicate *our_pred = insert_primary_noarg (entry);
-  if (filename)
-    open_output_file (filename, &our_pred->args.printf_vec);
-  else
-    open_stdout (&our_pred->args.printf_vec);
+  open_stdout (&our_pred->args.printf_vec);
   our_pred->side_effects = our_pred->no_default_print = true;
   our_pred->est_success_rate = 1.0f;
   return true;
 }
 
-
-static bool
-parse_fls (const struct parser_table* entry, char **argv, int *arg_ptr)
-{
-  const char *filename;
-  if (collect_arg (argv, arg_ptr, &filename))
-    {
-      if (insert_fls (entry, filename))
-        return true;
-      else
-        --*arg_ptr;             /* don't consume the invalid arg. */
-    }
-  return false;
-}
 
 static bool
 parse_follow (const struct parser_table* entry, char **argv, int *arg_ptr)
@@ -1015,53 +944,16 @@ parse_follow (const struct parser_table* entry, char **argv, int *arg_ptr)
 }
 
 static bool
-parse_fprint (const struct parser_table* entry, char **argv, int *arg_ptr)
+insert_fprint (const struct parser_table* entry)
 {
-  struct predicate *our_pred;
-  const char *filename;
-  if (collect_arg (argv, arg_ptr, &filename))
-    {
-      our_pred = insert_primary (entry, filename);
-      open_output_file (filename, &our_pred->args.printf_vec);
-      our_pred->side_effects = our_pred->no_default_print = true;
-      our_pred->need_stat = our_pred->need_type = false;
-      our_pred->est_success_rate = 1.0f;
-      return true;
-    }
-  else
-    {
-      return false;
-    }
-}
-
-static bool
-insert_fprint (const struct parser_table* entry, const char *filename)
-{
-  struct predicate *our_pred = insert_primary (entry, filename);
-  if (filename)
-    open_output_file (filename, &our_pred->args.printf_vec);
-  else
-    open_stdout (&our_pred->args.printf_vec);
+  struct predicate *our_pred = insert_primary_noarg (entry);
+  open_stdout (&our_pred->args.printf_vec);
   our_pred->side_effects = our_pred->no_default_print = true;
   our_pred->need_stat = our_pred->need_type = false;
   our_pred->est_success_rate = 1.0f;
   return true;
 }
 
-
-static bool
-parse_fprint0 (const struct parser_table* entry, char **argv, int *arg_ptr)
-{
-  const char *filename;
-  if (collect_arg (argv, arg_ptr, &filename))
-    {
-      if (insert_fprint (entry, filename))
-        return true;
-      else
-        --*arg_ptr;             /* don't consume the bad arg. */
-    }
-  return false;
-}
 
 static float estimate_fstype_success_rate (const char *fsname)
 {
@@ -1336,7 +1228,7 @@ parse_ls (const struct parser_table* entry, char **argv, int *arg_ptr)
 {
   (void) &argv;
   (void) &arg_ptr;
-  return insert_fls (entry, NULL);
+  return insert_fls (entry);
 }
 
 static bool
@@ -1649,18 +1541,6 @@ parse_nowarn (const struct parser_table* entry, char **argv, int *arg_ptr)
   return parse_noop (entry, argv, arg_ptr);
 }
 
-static bool
-parse_ok (const struct parser_table* entry, char **argv, int *arg_ptr)
-{
-  return insert_exec_ok ("-ok", entry, argv, arg_ptr);
-}
-
-static bool
-parse_okdir (const struct parser_table* entry, char **argv, int *arg_ptr)
-{
-  return insert_exec_ok ("-okdir", entry, argv, arg_ptr);
-}
-
 bool
 parse_openparen (const struct parser_table* entry, char **argv, int *arg_ptr)
 {
@@ -1897,7 +1777,7 @@ parse_print0 (const struct parser_table* entry, char **argv, int *arg_ptr)
   (void) entry;
   (void) argv;
   (void) arg_ptr;
-  return insert_fprint (entry, NULL);
+  return insert_fprint (entry);
 }
 
 static bool
@@ -1920,29 +1800,6 @@ parse_printf (const struct parser_table* entry, char **argv, int *arg_ptr)
           return false;
         }
     }
-  return false;
-}
-
-static bool
-parse_fprintf (const struct parser_table* entry, char **argv, int *arg_ptr)
-{
-  const char *filename;
-  char *format;
-  int saved_argc = *arg_ptr;
-
-  if (collect_arg (argv, arg_ptr, &filename))
-    {
-      if (collect_arg_nonconst (argv, arg_ptr, &format))
-        {
-          struct format_val fmt;
-          open_output_file (filename, &fmt);
-          saved_argc = *arg_ptr;
-
-          if (insert_fprintf (&fmt, entry, format))
-            return true;
-        }
-    }
-  *arg_ptr = saved_argc; /* don't consume the invalid argument. */
   return false;
 }
 
@@ -2418,7 +2275,7 @@ parse_version (const struct parser_table* entry, char **argv, int *arg_ptr)
   (void) argv;
   (void) arg_ptr;
 
-  display_findutils_version ("find");
+  display_findutils_version ("rfind");
   printf (_("Features enabled: "));
 
 #if CACHE_IDS
@@ -2763,238 +2620,6 @@ check_path_safety (const char *action)
 }
 
 
-/* handles both exec and ok predicate */
-static bool
-insert_exec_ok (const char *action,
-                const struct parser_table *entry,
-                char **argv,
-                int *arg_ptr)
-{
-  int start, end;               /* Indexes in ARGV of start & end of cmd. */
-  int i;                        /* Index into cmd args */
-  bool prev_was_braces_only;    /* Previous arg was '{}' (not e.g. 'Q' or '{}x'). */
-  bool allow_plus;              /* True if + is a valid terminator */
-  int brace_count;              /* Number of instances of {}. */
-  const char *brace_arg;        /* Which arg did {} appear in? */
-  PRED_FUNC func = entry->pred_func;
-  enum BC_INIT_STATUS bcstatus;
-
-  struct predicate *our_pred;
-  struct exec_val *execp;       /* Pointer for efficiency. */
-
-  if ((argv == NULL) || (argv[*arg_ptr] == NULL))
-    return false;
-
-  our_pred = insert_primary_withpred (entry, func, "(some -exec* arguments)");
-  our_pred->side_effects = our_pred->no_default_print = true;
-  our_pred->need_type = our_pred->need_stat = false;
-
-  assert(predicate_uses_exec (our_pred));
-  execp = &our_pred->args.exec_vec;
-  execp->wd_for_exec = NULL;
-
-  if ((func != pred_okdir) && (func != pred_ok))
-    {
-      allow_plus = true;
-      execp->close_stdin = false;
-    }
-  else
-    {
-      allow_plus = false;
-      /* The -ok* family need user confirmations via stdin.  */
-      options.ok_prompt_stdin = true;
-      /* If find reads stdin (i.e. for -ok and similar), close stdin
-       * in the child to prevent some script from consuming the output
-       * intended for find.
-       */
-      execp->close_stdin = true;
-    }
-
-
-  if ((func == pred_execdir) || (func == pred_okdir))
-    {
-      execp->wd_for_exec = NULL;
-      options.ignore_readdir_race = false;
-      check_path_safety (action);
-    }
-  else
-    {
-      assert (NULL != initial_wd);
-      execp->wd_for_exec = initial_wd;
-    }
-
-  our_pred->args.exec_vec.multiple = 0;
-
-  /* Count the number of args with path replacements, up until the ';'.
-   * Also figure out if the command is terminated by ";" or by "+".
-   */
-  start = *arg_ptr;
-  for (end = start, prev_was_braces_only=false, brace_count=0, brace_arg=NULL;
-       (argv[end] != NULL)
-       && ((argv[end][0] != ';') || (argv[end][1] != '\0'));
-       end++)
-    {
-      /* For -exec and -execdir, "{} +" can terminate the command. */
-      if (allow_plus && prev_was_braces_only
-           && argv[end][0] == '+' && argv[end][1] == 0)
-        {
-          our_pred->args.exec_vec.multiple = 1;
-          break;
-        }
-
-      prev_was_braces_only = false;
-      if (mbsstr (argv[end], "{}"))
-        {
-          if (0 == strcmp(argv[end], "{}"))
-            {
-              /* Savannah bug 66365: + only terminates the predicate
-               * immediately after an argument which is exactly, "{}".
-               * However, the "{}" in "x{}" should get expanded for
-               * the ";" case.
-               */
-              prev_was_braces_only = true;
-            }
-          brace_arg = argv[end];
-          ++brace_count;
-
-          if (start == end && (func == pred_execdir || func == pred_okdir))
-            {
-              /* The POSIX standard says that {} replacement should
-               * occur even in the utility name.  This is insecure
-               * since it means we will be executing a command whose
-               * name is chosen according to whatever find finds in
-               * the file system.  That can be influenced by an
-               * attacker.  Hence for -execdir and -okdir this is not
-               * allowed.  We can specify this as those options are
-               * not defined by POSIX.
-               */
-              error (EXIT_FAILURE, 0,
-                     _("You may not use {} within the utility name for "
-                       "-execdir and -okdir, because this is a potential "
-                       "security problem."));
-            }
-        }
-    }
-
-  /* Fail if no command given or no semicolon found. */
-  if ((end == start) || (argv[end] == NULL))
-    {
-      *arg_ptr = end;
-      free (our_pred);
-      return false;
-    }
-
-  if (our_pred->args.exec_vec.multiple)
-    {
-      const char *suffix;
-      if (func == pred_execdir)
-        suffix = "dir";
-      else
-        suffix = "";
-
-      if (brace_count > 1)
-        {
-          error (EXIT_FAILURE, 0,
-                 _("Only one instance of {} is supported with -exec%s ... +"),
-                 suffix);
-        }
-      else if (strlen (brace_arg) != 2u)
-        {
-          enum { MsgBufSize = 19 };
-          char buf[MsgBufSize];
-          const size_t needed = snprintf (buf, MsgBufSize, "-exec%s ... {} +", suffix);
-          assert (needed <= MsgBufSize);  /* If this assertion fails, correct the value of MsgBufSize. */
-          error (EXIT_FAILURE, 0,
-                 _("In %s the %s must appear by itself, but you specified %s"),
-                 quotearg_n_style (0, options.err_quoting_style, buf),
-                 quotearg_n_style (1, options.err_quoting_style, "{}"),
-                 quotearg_n_style (2, options.err_quoting_style, brace_arg));
-        }
-    }
-
-  /* We use a switch statement here so that the compiler warns us when
-   * we forget to handle a newly invented enum value.
-   *
-   * Like xargs, we allow 2KiB of headroom for the launched utility to
-   * export its own environment variables before calling something
-   * else.
-   */
-  bcstatus = bc_init_controlinfo (&execp->ctl, 2048u);
-  switch (bcstatus)
-    {
-    case BC_INIT_ENV_TOO_BIG:
-    case BC_INIT_CANNOT_ACCOMODATE_HEADROOM:
-      error (EXIT_FAILURE, 0, _("The environment is too large for exec()."));
-      break;
-    case BC_INIT_OK:
-      /* Good news.  Carry on. */
-      break;
-    }
-  bc_use_sensible_arg_max (&execp->ctl);
-
-
-  execp->ctl.exec_callback = launch;
-
-  if (our_pred->args.exec_vec.multiple)
-    {
-      /* "+" terminator, so we can just append our arguments after the
-       * command and initial arguments.
-       */
-      execp->replace_vec = NULL;
-      execp->ctl.replace_pat = NULL;
-      execp->ctl.rplen = 0;
-      execp->ctl.lines_per_exec = 0; /* no limit */
-      execp->ctl.args_per_exec = 0; /* no limit */
-
-      /* remember how many arguments there are */
-      execp->ctl.initial_argc = (end-start) - 1;
-
-      /* execp->state = xmalloc(sizeof struct buildcmd_state); */
-      bc_init_state (&execp->ctl, &execp->state, execp);
-
-      /* Gather the initial arguments.  Skip the {}. */
-      for (i=start; i<end-1; ++i)
-        {
-          bc_push_arg (&execp->ctl, &execp->state,
-                       argv[i], strlen (argv[i])+1,
-                       NULL, 0,
-                       1);
-        }
-    }
-  else
-    {
-      /* Semicolon terminator - more than one {} is supported, so we
-       * have to do brace-replacement.
-       */
-      execp->num_args = end - start;
-
-      execp->ctl.replace_pat = "{}";
-      execp->ctl.rplen = strlen (execp->ctl.replace_pat);
-      execp->ctl.lines_per_exec = 0; /* no limit */
-      execp->ctl.args_per_exec = 0; /* no limit */
-      execp->replace_vec = xmalloc (sizeof(char*)*execp->num_args);
-
-
-      /* execp->state = xmalloc(sizeof(*(execp->state))); */
-      bc_init_state (&execp->ctl, &execp->state, execp);
-
-      /* Remember the (pre-replacement) arguments for later. */
-      for (i=0; i<execp->num_args; ++i)
-        {
-          execp->replace_vec[i] = argv[i+start];
-        }
-    }
-
-  if (argv[end] == NULL)
-    *arg_ptr = end;
-  else
-    *arg_ptr = end + 1;
-
-  return true;
-}
-
-
-
 /* Get a timestamp and comparison type.
 
    STR is the ASCII representation.
@@ -3284,37 +2909,11 @@ insert_num (char **argv, int *arg_ptr, const struct parser_table *entry)
 }
 
 static void
-open_output_file (const char *path, struct format_val *p)
+open_stdout (struct format_val *p)
 {
   p->segment = NULL;
   p->quote_opts = clone_quoting_options (NULL);
-
-  if (!strcmp (path, "/dev/stderr"))
-    {
-      p->stream = stderr;
-      p->filename = _("standard error");
-    }
-  else if (!strcmp (path, "/dev/stdout"))
-    {
-      p->stream = stdout;
-      p->filename = _("standard output");
-    }
-  else
-    {
-      p->stream = sharefile_fopen (state.shared_files, path);
-      p->filename = path;
-
-      if (p->stream == NULL)
-        {
-          fatal_nontarget_file_error (errno, path);
-        }
-    }
-
+  p->stream = stdout;
+  p->filename = _("standard output");
   p->dest_is_tty = stream_is_tty (p->stream);
-}
-
-static void
-open_stdout (struct format_val *p)
-{
-  open_output_file ("/dev/stdout", p);
 }

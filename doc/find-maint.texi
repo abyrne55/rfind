@@ -146,10 +146,7 @@ when making design trade-offs.   For findutils, that priority list is:
 @item Functionality
 @end enumerate
 
-For example, we support the @code{-exec} action because POSIX
-compliance requires this, even though there are security problems with
-it and we would otherwise prefer people to use @code{-execdir}.  There
-are also cases where some performance is sacrificed in the name of
+There are cases where some performance is sacrificed in the name of
 security.  For example, the sanity checks that @code{find} performs
 while traversing a directory tree may slow it down.   We adopt
 functional changes, and functional changes are allowed to make
