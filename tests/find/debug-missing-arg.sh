@@ -1,6 +1,6 @@
 #!/bin/sh
 # Verify that 'find -D' without further argument outputs an error diagnostic.
-# Between FINDUTILS_4_3_1-1 and 4.6, find crashed on some platforms.
+# Between FINDUTILS_4_3_1-1 and 4.6, rfind crashed on some platforms.
 # See Savannah bug #52220.
 
 # Copyright (C) 2017-2026 Free Software Foundation, Inc.
@@ -19,10 +19,10 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; fu_path_prepend_
-print_ver_ find
+print_ver_ rfind
 
-returns_ 1 find -D >/dev/null 2> err || fail=1
-grep -F "find: Missing argument after the -D option." err \
+returns_ 1 rfind -D >/dev/null 2> err || fail=1
+grep -F "rfind: Missing argument after the -D option." err \
   || { cat err; fail=1; }
 
 Exit $fail

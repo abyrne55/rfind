@@ -147,10 +147,10 @@ when making design trade-offs.   For findutils, that priority list is:
 @end enumerate
 
 There are cases where some performance is sacrificed in the name of
-security.  For example, the sanity checks that @code{find} performs
+security.  For example, the sanity checks that @code{rfind} performs
 while traversing a directory tree may slow it down.   We adopt
 functional changes, and functional changes are allowed to make
-@code{find} slower, but only if there is no detectable impact on users
+@code{rfind} slower, but only if there is no detectable impact on users
 who don't use the feature.
 
 Backward-incompatible changes do get made in order to comply with
@@ -181,7 +181,7 @@ you're not using a VPATH build configuration).
 
 Lastly, we try not to depend on having a ``working system''.  The
 findutils suite is used for diagnosis of problems, and this applies
-especially to @code{find}.  We should ensure that @code{find} still
+especially to @code{rfind}.  We should ensure that @code{rfind} still
 works on relatively broken systems, for example systems with damaged
 @file{/etc/passwd} or @code{/etc/fstab} files.  Another interesting
 example is the case where a system is a client of one or more
@@ -244,7 +244,7 @@ million files, and a find command line should print one million of
 them, but in fact it misses out 1%, you can tell the program is
 printing the wrong result only if you know the right answer for that
 filesystem at that time.  If you don't know this, you may just not
-find out about that bug.  For this reason it is important to have a
+rfind out about that bug.  For this reason it is important to have a
 comprehensive test suite.
 
 The test suite is of course not the only way to find the bugs.  The
@@ -386,7 +386,7 @@ Debug and diagnostic code is often used to verify that a program is
 working in the way its author thinks it should be.  But users are
 often uncertain about what a program is doing, too.  Exposing them a
 little more diagnostic information can help.  Much of the diagnostic
-code in @code{find}, for example, is controlled by the @samp{-D} flag,
+code in @code{rfind}, for example, is controlled by the @samp{-D} flag,
 as opposed to C preprocessor directives.
 
 Making diagnostic messages available to users also means that the
@@ -396,10 +396,10 @@ phrasing of the diagnostic messages becomes important, too.
 @node    Don't Trust the File System Contents
 @section Don't Trust the File System Contents
 
-People use @code{find} to search in directories created by other
+People use @code{rfind} to search in directories created by other
 people.  Sometimes they do this to check to suspicious activity (for
 example to look for new setuid binaries).  This means that it would be
-bad if @code{find} were vulnerable to, say, a security problem
+bad if @code{rfind} were vulnerable to, say, a security problem
 exploitable by constructing a specially-crafted filename.  The same
 consideration would apply to @code{locate} and @code{updatedb}.
 
@@ -410,9 +410,9 @@ for surely where thou typest @samp{foo} someone someday shall type
 @samp{supercalifragilisticexpialidocious}.
 @end quotation
 
-Symbolic links can often be a problem.  If @code{find} calls
+Symbolic links can often be a problem.  If @code{rfind} calls
 @code{lstat} on something and discovers that it is a directory, it's
-normal for @code{find} to recurse into it.  Even if the @code{chdir}
+normal for @code{rfind} to recurse into it.  Even if the @code{chdir}
 system call is used immediately, there is still a window of
 opportunity between the @code{lstat} and the @code{chdir} in which a
 malicious person could rename the directory and substitute a symbolic
@@ -422,15 +422,15 @@ link to some other directory.
 @section The File System Is Being Modified
 
 The filesystem gets modified while you are traversing it.  For,
-example, it's normal for files to get deleted while @code{find} is
+example, it's normal for files to get deleted while @code{rfind} is
 traversing a directory.  Issuing an error message seems helpful when a
 file is deleted from the one directory you are interested in, but if
-@code{find} is searching 15000 directories, such a message becomes
+@code{rfind} is searching 15000 directories, such a message becomes
 less helpful.
 
-Bear in mind also that it is possible for the directory @code{find} is
+Bear in mind also that it is possible for the directory @code{rfind} is
 searching to be concurrently moved elsewhere in the file system,
-and that the directory in which @code{find} was started could be
+and that the directory in which @code{rfind} was started could be
 deleted.
 
 Henry Spencer's sixth commandment is also apposite here:
@@ -858,7 +858,7 @@ To discover the longest path name on a given system, you can use the
 following command (requires GNU findutils and GNU coreutils):
 
 @verbatim
-find / -print0 | tr -c '\0' 'x' | tr '\0' '\n' | wc -L
+rfind / -print0 | tr -c '\0' 'x' | tr '\0' '\n' | wc -L
 @end verbatim
 
 V. EXAMPLE

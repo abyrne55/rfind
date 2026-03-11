@@ -17,16 +17,16 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; fu_path_prepend_
-print_ver_ find
+print_ver_ rfind
 
 for o in -inum -links -uid -gid; do
   # Check error diagnosic for missing argument.
-  returns_ 1 find $o >out 2>err || fail=1
+  returns_ 1 rfind $o >out 2>err || fail=1
   compare /dev/null out || fail=1
   grep -F 'missing argument to' err || { fail=1; cat err; }
 
   # Check error diagnosic for non-numeric argument.
-  returns_ 1 find $o foo >out 2>err || fail=1
+  returns_ 1 rfind $o foo >out 2>err || fail=1
   compare /dev/null out || fail=1
   grep -F 'non-numeric argument to' err || { fail=1; cat err; }
 done

@@ -18,7 +18,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; fu_path_prepend_
-print_ver_ find
+print_ver_ rfind
 
 # This test is in 'all_root_tests' to get better coverage for file types a
 # regular user cannot create.  Still, it is run during 'make check' as well.
@@ -31,7 +31,7 @@ require_root_
 # Check if the given file type is supported by find.
 # Used for the file type compiled in conditionally: l,p,s,D)
 find_supports_type() {
-  find '.' -maxdepth 0 -type "$1"
+  rfind '.' -maxdepth 0 -type "$1"
 }
 
 # Create test files of all possible types (if possible):
@@ -109,11 +109,11 @@ find_supports_type D && HAVE_DOOR=1 || HAVE_DOOR=0
 
 # Create some test files.
 make_test_data dir \
-  && find dir -mindepth 1 > all \
+  && rfind dir -mindepth 1 > all \
   && sort -o all all \
   || framework_failure_ "failed to set up the test in 'dir'"
 # Just to see what's there.
-find dir -mindepth 1 -ls
+rfind dir -mindepth 1 -ls
 
 fail=0
 
@@ -121,45 +121,45 @@ fail=0
 > exp
 
 # Ensure empty type arguments are rejected.
-returns_ 1 find dir -mindepth 1 -type '' > out 2> err || fail=1
+returns_ 1 rfind dir -mindepth 1 -type '' > out 2> err || fail=1
 compare exp out || fail=1
 grep 'Arguments to -type should contain at least one letter' err \
   || { cat err; fail=1; }
 
-returns_ 1 find dir -mindepth 1 -xtype '' > out 2> err || fail=1
+returns_ 1 rfind dir -mindepth 1 -xtype '' > out 2> err || fail=1
 compare exp out || fail=1
 grep 'Arguments to -xtype should contain at least one letter' err \
   || { cat err; fail=1; }
 
 # Ensure non-separated type arguments are rejected.
-returns_ 1 find dir -mindepth 1 -type fd > out 2> err || fail=1
+returns_ 1 rfind dir -mindepth 1 -type fd > out 2> err || fail=1
 compare exp out || fail=1
 grep 'Must separate multiple arguments to -type' err \
   || { cat err; fail=1; }
 
-returns_ 1 find dir -mindepth 1 -xtype fd > out 2> err || fail=1
+returns_ 1 rfind dir -mindepth 1 -xtype fd > out 2> err || fail=1
 compare exp out || fail=1
 grep 'Must separate multiple arguments to -xtype' err \
   || { cat err; fail=1; }
 
 # Ensure unterminated type list arguments are rejected.
-returns_ 1 find dir -mindepth 1 -type f, > out 2> err || fail=1
+returns_ 1 rfind dir -mindepth 1 -type f, > out 2> err || fail=1
 compare exp out || fail=1
 grep 'Last file type in list argument to -type is missing' err \
   ||  { cat err; fail=1; }
 
-returns_ 1 find dir -mindepth 1 -xtype f, > out 2> err || fail=1
+returns_ 1 rfind dir -mindepth 1 -xtype f, > out 2> err || fail=1
 compare exp out || fail=1
 grep 'Last file type in list argument to -xtype is missing' err \
   ||  { cat err; fail=1; }
 
 # Ensure duplicate entries in the type list arguments are rejected.
-returns_ 1 find dir -mindepth 1 -type f,f > out 2> err || fail=1
+returns_ 1 rfind dir -mindepth 1 -type f,f > out 2> err || fail=1
 compare exp out || fail=1
 grep 'Duplicate file type .* in the argument list to -type' err \
   ||  { cat err; fail=1; }
 
-returns_ 1 find dir -mindepth 1 -xtype f,f > out 2> err || fail=1
+returns_ 1 rfind dir -mindepth 1 -xtype f,f > out 2> err || fail=1
 compare exp out || fail=1
 grep 'Duplicate file type .* in the argument list to -xtype' err \
   ||  { cat err; fail=1; }
@@ -167,65 +167,65 @@ grep 'Duplicate file type .* in the argument list to -xtype' err \
 # Continue with positive tests.
 # Files only
 grep -e '/reg$' all > exp
-find dir -type f > out || fail=1
+rfind dir -type f > out || fail=1
 sort -o out out
 compare exp out || fail=1;
 
 # Symbolic links only.
 if [ $HAVE_LINK = 1 ]; then
   grep -e 'link$' all > exp
-  find dir -type l > out || fail=1
+  rfind dir -type l > out || fail=1
   sort -o out out
   compare exp out || fail=1;
 
   grep -e 'dangling-link$' all > exp
-  find dir -xtype l > out || fail=1
+  rfind dir -xtype l > out || fail=1
   sort -o out out
   compare exp out || fail=1;
 fi
 
 # Files and directories.
 grep -e '/reg$' -e '/dir$' all > exp
-find dir -mindepth 1 -type f,d > out || fail=1
+rfind dir -mindepth 1 -type f,d > out || fail=1
 sort -o out out
 compare exp out || fail=1;
 
 grep -e '/reg' -e '/dir' all > exp
-find dir -mindepth 1 -xtype f,d > out || fail=1
+rfind dir -mindepth 1 -xtype f,d > out || fail=1
 sort -o out out
 compare exp out || fail=1;
 
 # Block devices.
 grep -e '/reg$' -e '/dir$' -e '/blk$' all > exp
-find dir -mindepth 1 -type b,f,d > out || fail=1
+rfind dir -mindepth 1 -type b,f,d > out || fail=1
 sort -o out out
 compare exp out || fail=1;
 
 grep -e '/reg' -e '/dir' -e '/blk' all > exp
-find dir -mindepth 1 -xtype b,f,d > out || fail=1
+rfind dir -mindepth 1 -xtype b,f,d > out || fail=1
 sort -o out out
 compare exp out || fail=1;
 
 # Character devices.
 grep -e '/reg$' -e '/dir$' -e '/chr$' all > exp
-find dir -mindepth 1 -type f,c,d > out || fail=1
+rfind dir -mindepth 1 -type f,c,d > out || fail=1
 sort -o out out
 compare exp out || fail=1;
 
 grep -e '/reg' -e '/dir' -e '/chr' all > exp
-find dir -mindepth 1 -xtype f,c,d > out || fail=1
+rfind dir -mindepth 1 -xtype f,c,d > out || fail=1
 sort -o out out
 compare exp out || fail=1;
 
 # FIFOs.
 if [ $HAVE_FIFO = 1 ]; then
   grep -e '/reg$' -e '/dir$' -e '/fifo$' all > exp
-  find dir -mindepth 1 -type f,d,p > out || fail=1
+  rfind dir -mindepth 1 -type f,d,p > out || fail=1
   sort -o out out
   compare exp out || fail=1;
 
   grep -e '/reg' -e '/dir' -e '/fifo' all > exp
-  find dir -mindepth 1 -xtype f,d,p > out || fail=1
+  rfind dir -mindepth 1 -xtype f,d,p > out || fail=1
   sort -o out out
   compare exp out || fail=1;
 fi
@@ -233,12 +233,12 @@ fi
 # Sockets.
 if [ $HAVE_SOCK = 1 ]; then
   grep -e '/reg$' -e '/dir$' -e '/sock$' all > exp
-  find dir -mindepth 1 -type f,d,s > out || fail=1
+  rfind dir -mindepth 1 -type f,d,s > out || fail=1
   sort -o out out
   compare exp out || fail=1;
 
   grep -e '/reg' -e '/dir' -e '/sock' all > exp
-  find dir -mindepth 1 -xtype f,d,s > out || fail=1
+  rfind dir -mindepth 1 -xtype f,d,s > out || fail=1
   sort -o out out
   compare exp out || fail=1;
 fi
@@ -246,12 +246,12 @@ fi
 # Symbolic links.
 if [ $HAVE_LINK = 1 ]; then
   grep -e '/reg$' -e 'link$' all > exp
-  find dir -mindepth 1 -type f,l > out || fail=1
+  rfind dir -mindepth 1 -type f,l > out || fail=1
   sort -o out out
   compare exp out || fail=1;
 
   grep -e '/reg' -e 'dangling-link$' all > exp
-  find dir -mindepth 1 -xtype f,l > out || fail=1
+  rfind dir -mindepth 1 -xtype f,l > out || fail=1
   sort -o out out
   compare exp out || fail=1;
 fi
@@ -262,24 +262,24 @@ t='f,d,b,c'
 [ $HAVE_SOCK = 1 ] && t="$t,s"
 [ $HAVE_DOOR = 1 ] && t="$t,D"
 grep -v 'dangling-link$' all > exp
-find dir -mindepth 1 -xtype "$t" > out || fail=1
+rfind dir -mindepth 1 -xtype "$t" > out || fail=1
 sort -o out out
 compare exp out || fail=1;
 
 # negation
 if [ $HAVE_LINK = 1 ]; then
-  find dir -mindepth 1 -not -xtype l > out || fail=1
+  rfind dir -mindepth 1 -not -xtype l > out || fail=1
   sort -o out out
   compare exp out || fail=1;
 fi
 
 # Finally: full list
 [ $HAVE_LINK = 1 ] && t="$t,l"
-find dir -mindepth 1 -type "$t" > out || fail=1
+rfind dir -mindepth 1 -type "$t" > out || fail=1
 sort -o out out
 compare all out || fail=1;
 
-find dir -mindepth 1 -xtype "$t" > out || fail=1
+rfind dir -mindepth 1 -xtype "$t" > out || fail=1
 sort -o out out
 compare all out || fail=1;
 

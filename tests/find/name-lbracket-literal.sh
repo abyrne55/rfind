@@ -1,5 +1,5 @@
 #!/bin/sh
-# Test that find -name treats the unquoted '[' argument literally.
+# Test that rfind -name treats the unquoted '[' argument literally.
 # See Savannah bug #32043.
 
 # Copyright (C) 2011-2026 Free Software Foundation, Inc.
@@ -18,13 +18,13 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; fu_path_prepend_
-print_ver_ find
+print_ver_ rfind
 
 # Prepare a file named '['.
 touch '[' || framework_failure_
 echo './[' > exp || framework_failure_
 
-find -name '[' -print > out || fail=1
+rfind -name '[' -print > out || fail=1
 compare exp out || fail=1
 
 Exit $fail

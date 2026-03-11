@@ -1,5 +1,5 @@
 #!/bin/sh
-# find -depth: ensure to output an unreadable directory.
+# rfind -depth: ensure to output an unreadable directory.
 
 # Copyright (C) 2020-2026 Free Software Foundation, Inc.
 
@@ -17,7 +17,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; fu_path_prepend_
-print_ver_ find
+print_ver_ rfind
 
 # Find run as root would not fail for an unreadable directory.
 skip_if_root_
@@ -26,12 +26,12 @@ skip_if_root_
 mkdir tmp tmp/dir \
   && chmod 0311 tmp/dir \
   && echo 'tmp/dir' > exp \
-  && echo "find: 'tmp/dir': Permission denied" > experr \
+  && echo "rfind: 'tmp/dir': Permission denied" > experr \
   || framework_failure_
 
-# Run FTS-based find with -depth; versions < 4.7.0 failed to output
+# Run FTS-based rfind with -depth; versions < 4.7.0 failed to output
 # an unreadable directory (see #54171).
-returns_ 1 find tmp -depth -name dir > out 2> err || fail=1
+returns_ 1 rfind tmp -depth -name dir > out 2> err || fail=1
 
 compare exp out || fail=1
 compare experr err || fail=1

@@ -2456,7 +2456,7 @@ insert_type (char **argv, int *arg_ptr,
         type_cell = 0;
         error (EXIT_FAILURE, 0,
                _("%s %c is not supported because symbolic links "
-                 "are not supported on the platform find was compiled on."),
+                 "are not supported on the platform rfind was compiled on."),
                pred_string, (*typeletter));
 #endif
         break;
@@ -2468,7 +2468,7 @@ insert_type (char **argv, int *arg_ptr,
         type_cell = 0;
         error (EXIT_FAILURE, 0,
                _("%s %c is not supported because FIFOs "
-                 "are not supported on the platform find was compiled on."),
+                 "are not supported on the platform rfind was compiled on."),
                pred_string, (*typeletter));
 #endif
         break;
@@ -2480,7 +2480,7 @@ insert_type (char **argv, int *arg_ptr,
         type_cell = 0;
         error (EXIT_FAILURE, 0,
                _("%s %c is not supported because named sockets "
-                 "are not supported on the platform find was compiled on."),
+                 "are not supported on the platform rfind was compiled on."),
                pred_string, (*typeletter));
 #endif
         break;
@@ -2496,7 +2496,7 @@ insert_type (char **argv, int *arg_ptr,
         type_cell = 0;
         error (EXIT_FAILURE, 0,
                _("%s %c is not supported because Solaris doors "
-                 "are not supported on the platform find was compiled on."),
+                 "are not supported on the platform rfind was compiled on."),
                pred_string, (*typeletter));
 #endif
         break;
@@ -2597,7 +2597,7 @@ check_path_safety (const char *action)
           error (EXIT_FAILURE, 0,
                  _("The current directory is included in the PATH "
                    "environment variable, which is insecure in "
-                   "combination with the %s action of find.  "
+                   "combination with the %s action of rfind.  "
                    "Please remove the current directory from your "
                    "$PATH (that is, remove \".\", doubled colons, "
                    "or leading or trailing colons)"),
@@ -2609,7 +2609,7 @@ check_path_safety (const char *action)
           error (EXIT_FAILURE, 0,
                  _("The relative path %s is included in the PATH "
                    "environment variable, which is insecure in "
-                   "combination with the %s action of find.  "
+                   "combination with the %s action of rfind.  "
                    "Please remove that entry from $PATH"),
                  safely_quote_err_filename (0, relpath ? relpath : &path[pos]),
                  action);

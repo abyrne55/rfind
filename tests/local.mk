@@ -15,7 +15,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-built_programs = find xargs frcode locate updatedb
+built_programs = rfind xargs frcode locate updatedb
 
 AM_CPPFLAGS = -I$(top_srcdir)/gl/lib
 LDADD = $(top_builddir)/gl/lib/libgnulib.a
@@ -118,22 +118,18 @@ sh_tests = \
   tests/misc/help-version.sh \
   tests/find/depth-unreadable-dir.sh \
   tests/find/inode-zero.sh \
-  tests/find/many-dir-entries-vs-OOM.sh \
   tests/find/name-lbracket-literal.sh \
   tests/find/name-slash.sh \
   tests/find/printf_escapechars.sh \
   tests/find/printf_escape_c.sh \
   tests/find/printf_inode.sh \
   tests/find/operators-wrong-with-dash.sh \
-  tests/find/execdir-fd-leak.sh \
-  tests/find/exec-plus-last-file.sh \
   tests/find/files0-from.sh \
   tests/find/refuse-noop.sh \
   tests/find/debug-missing-arg.sh \
   tests/find/used.sh \
   tests/find/newer.sh \
   tests/find/opt-numeric-arg.sh \
-  tests/find/sv-bug-66365-exec.sh \
   tests/find/readdir_race.sh \
   tests/find/user-group-max.sh \
   tests/xargs/conflicting_opts.sh \

@@ -17,9 +17,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; fu_path_prepend_
-print_ver_ find
+print_ver_ rfind
 
-# Skip test unless we find a file with inode number 0.
+# Skip test unless we rfind a file with inode number 0.
 # GNU/Hurd uses inode 0 for /dev/console.
 f='/dev/console'
 test -e "${f}" \
@@ -31,23 +31,23 @@ echo "${f}" > exp || framework_failure_
 
 # Ensure -inum works.
 # Find by exact inode number 0.
-find "${f}" -inum 0 >out 2>err || fail=1
+rfind "${f}" -inum 0 >out 2>err || fail=1
 compare exp out || fail=1
 compare /dev/null err || fail=1
 
 # Find by inode number <1.
-find "${f}" -inum -1 >out 2>err || fail=1
+rfind "${f}" -inum -1 >out 2>err || fail=1
 compare exp out || fail=1
 compare /dev/null err || fail=1
 
 # No match with unrelated inode number.
-find "${f}" -inum 12345 >out 2>err || fail=1
+rfind "${f}" -inum 12345 >out 2>err || fail=1
 compare /dev/null out || fail=1
 compare /dev/null err || fail=1
 
 # Ensure '-printf "%i"' works.
 echo 0 > exp || framework_failure_
-find "${f}" -printf '%i\n' >out 2>err || fail=1
+rfind "${f}" -printf '%i\n' >out 2>err || fail=1
 compare exp out || fail=1
 compare /dev/null err || fail=1
 

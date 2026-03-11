@@ -1,5 +1,5 @@
 #!/bin/sh
-# Exercise find -mount vs. -xdev behaviour.
+# Exercise rfind -mount vs. -xdev behaviour.
 
 # Copyright (C) 2026 Free Software Foundation, Inc.
 
@@ -17,7 +17,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; fu_path_prepend_
-print_ver_ find
+print_ver_ rfind
 
 # Require GNU df in getmntpoint.
 for f in df gdf; do
@@ -50,15 +50,15 @@ for m in /dev /home /proc /run /tmp; do
   echo "$m" > exp || framework_failure_
 
   # Option -mount skips.
-  find / -maxdepth 1 -mount -path "$m" -print > out-m   || fail=1
+  rfind / -maxdepth 1 -mount -path "$m" -print > out-m   || fail=1
   compare /dev/null out-m || fail=1
 
   # Option -xdev does not skip (but would skip sub-directories).
-  find / -maxdepth 1 -xdev -path "$m" -print > out-x   || fail=1
+  rfind / -maxdepth 1 -xdev -path "$m" -print > out-x   || fail=1
   compare exp out-x || fail=1
 
   # Options -mount -xdev shall skip as well (-xdev has no effect).
-  find / -maxdepth 1 -mount -xdev -path "$m" -print > out-mx  || fail=1
+  rfind / -maxdepth 1 -mount -xdev -path "$m" -print > out-mx  || fail=1
   compare /dev/null out-m || fail=1
 done
 

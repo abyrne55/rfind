@@ -1,5 +1,5 @@
 #!/bin/sh
-# Exercise find -mount vs. -xdev behaviour with another file system.
+# Exercise rfind -mount vs. -xdev behaviour with another file system.
 
 # Copyright (C) 2026 Free Software Foundation, Inc.
 
@@ -17,7 +17,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; fu_path_prepend_
-print_ver_ find
+print_ver_ rfind
 
 # The test setup requires root permissions (while the pure test run would not).
 require_root_
@@ -41,10 +41,10 @@ mount -oloop fs mnt \
 echo test > mnt/file || framework_failure_
 echo './mnt/file' > exp || framework_failure_
 
-find              -name 'file' > out || fail=1
-find -xdev        -name 'file' > out-x || fail=1
-find -mount       -name 'file' > out-m || fail=1
-find -mount -xdev -name 'file' > out-mx || fail=1
+rfind              -name 'file' > out || fail=1
+rfind -xdev        -name 'file' > out-x || fail=1
+rfind -mount       -name 'file' > out-m || fail=1
+rfind -mount -xdev -name 'file' > out-mx || fail=1
 
 # Only the run without -mount and/or -xdev found 'mnt/file'.
 compare exp out || fail=1
@@ -58,20 +58,20 @@ mount --bind mnt/file mntf \
   || skip_ "This test requires mount with a working --bind option."
 
 
-# Only the run without options and pure -xdev should find the file 'mntf',
+# Only the run without options and pure -xdev should rfind the file 'mntf',
 # and the runs with -mount (with or without -xdev) should ignore it.
 echo './mntf' > exp || framework_failure_
 
-find -name mntf > out || fail=1
+rfind -name mntf > out || fail=1
 compare exp out || fail=1
 
-find -xdev -name mntf > out-x || fail=1
+rfind -xdev -name mntf > out-x || fail=1
 compare exp out-x || fail=1
 
-find -mount -name mntf > out-m || fail=1
+rfind -mount -name mntf > out-m || fail=1
 compare /dev/null out-m || fail=1
 
-find -mount -xdev -name mntf > out-mx || fail=1
+rfind -mount -xdev -name mntf > out-mx || fail=1
 compare /dev/null out-mx || fail=1
 
 Exit $fail

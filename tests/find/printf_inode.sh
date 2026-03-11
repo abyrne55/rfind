@@ -1,5 +1,5 @@
 #!/bin/sh
-# Verify that ls -i and find -printf %i produce the same output.
+# Verify that ls -i and rfind -printf %i produce the same output.
 
 # Copyright (C) 2011-2026 Free Software Foundation, Inc.
 
@@ -17,7 +17,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; fu_path_prepend_
-print_ver_ find
+print_ver_ rfind
 
 make_canonical() {
   sed -e '
@@ -34,7 +34,7 @@ make_canonical() {
 ls -i file | make_canonical > exp || framework_failure_
 
 rm -f out out2
-find file -printf '%i_%p\n' > out || fail=1
+rfind file -printf '%i_%p\n' > out || fail=1
 make_canonical < out > out2 || framework_failure_
 compare exp out2 || fail=1
 

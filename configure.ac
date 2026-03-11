@@ -78,7 +78,7 @@ else
 fi
 
 AC_ARG_VAR([DEFAULT_ARG_SIZE], [Default size of arguments to child processes
-of find and xargs, 128k if unspecified])
+of rfind and xargs, 128k if unspecified])
 if test -n "$DEFAULT_ARG_SIZE"; then
    AC_DEFINE_UNQUOTED([DEFAULT_ARG_SIZE], [$DEFAULT_ARG_SIZE],
      [If defined, the default argument size used in child processes])

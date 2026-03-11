@@ -17,18 +17,18 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; fu_path_prepend_
-print_ver_ find
+print_ver_ rfind
 
-# Ensure that find does not generally skip warnings due to POSIX requirements.
+# Ensure that rfind does not generally skip warnings due to POSIX requirements.
 unset POSIXLY_CORRECT
 
-# Detect if find emits warnings.
+# Detect if rfind emits warnings.
 find_emits_warnings_ \
   && fwarns=1 \
   || fwarns=0
 
 # Exercise '-name PATTERN' with a '/' somewhere in PATTERN.
-find -name 'dir/file' > out 2> err || fail=1
+rfind -name 'dir/file' > out 2> err || fail=1
 compare /dev/null out || fail=1
 if [ $fwarns = 1 ]; then
   grep 'warning: .*matches against basenames only.* evaluate to false' err \
@@ -38,29 +38,29 @@ else
 fi
 
 # Likewise in POSIX environment.
-POSIXLY_CORRECT=1 find -name 'dir/file' > out 2> err || fail=1
+POSIXLY_CORRECT=1 rfind -name 'dir/file' > out 2> err || fail=1
 compare /dev/null out || fail=1
 compare /dev/null err || fail=1
 
 # Likewise with -nowarn.
-find -nowarn -name 'dir/file' > out 2> err || fail=1
+rfind -nowarn -name 'dir/file' > out 2> err || fail=1
 compare /dev/null out || fail=1
 compare /dev/null err || fail=1
 
 # Exercise '-name /', i.e., PATTERN just being "/": no warning because this
 # is a valid basename in the (trivial) case comparing to root directory "/".
 echo '/' > exp || framework_failure_
-find / -maxdepth 0 -name '/' > out 2> err || fail=1
+rfind / -maxdepth 0 -name '/' > out 2> err || fail=1
 compare exp out || fail=1
 compare /dev/null err || fail=1
 
 # Exercise '-name /' in POSIX environment.
-POSIXLY_CORRECT=1 find / -maxdepth 0 -name '/' > out 2> err || fail=1
+POSIXLY_CORRECT=1 rfind / -maxdepth 0 -name '/' > out 2> err || fail=1
 compare exp out || fail=1
 compare /dev/null err || fail=1
 
 # Exercise '-name /' with the -warn option.
-find / -warn -maxdepth 0 -name '/' > out 2> err || fail=1
+rfind / -warn -maxdepth 0 -name '/' > out 2> err || fail=1
 compare exp out || fail=1
 compare /dev/null err || fail=1
 

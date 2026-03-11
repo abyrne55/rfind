@@ -17,15 +17,15 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; fu_path_prepend_
-print_ver_ find
+print_ver_ rfind
 
 # Expect no output.
 > exp || framework_failure_
 
 for o in used amin cmin mmin atime ctime mtime; do
-  find -$o NaN > outid not-a-number argument >out 2>err && fail=1
+  rfind -$o NaN > out 2>err && fail=1
   compare exp out || fail=1
-  grep -F 'find: invalid not-a-number argument:' err \
+  grep -F 'rfind: invalid not-a-number argument:' err \
     || { cat err; fail=1; }
 done
 

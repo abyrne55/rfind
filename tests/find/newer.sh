@@ -17,7 +17,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; fu_path_prepend_
-print_ver_ find
+print_ver_ rfind
 
 # Verify the -newer test family - omitting birth time as support for this
 # is not common enough yet.
@@ -45,7 +45,7 @@ for x in \
   -newerma -newermc -newermm \
   ; do
   rm -f out || framework_failure_
-  find . $x file2 -name 'file*' > out || fail=1
+  rfind . $x file2 -name 'file*' > out || fail=1
   compare exp out || fail=1
 done
 
@@ -55,7 +55,7 @@ tref="$( stat -c '%y' file2 )" || tref=''
 if test "${tref}"; then
   for x in -newerat -newerct -newermt; do
     rm -f out || framework_failure_
-    find . $x "${tref}" -name 'file*' > out || fail=1
+    rfind . $x "${tref}" -name 'file*' > out || fail=1
     compare exp out || fail=1
   done
 else

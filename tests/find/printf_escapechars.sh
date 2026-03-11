@@ -17,7 +17,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; fu_path_prepend_
-print_ver_ find
+print_ver_ rfind
 
 # Check for working od(1).
 echo test | od -c >/dev/null \
@@ -54,7 +54,7 @@ _EOD_
 # Prepare expected stderr.
 echo "warning: unrecognized escape" > experr || framework_failure_
 
-find . -maxdepth 0 \
+rfind . -maxdepth 0 \
   -printf 'OCTAL1: \1\n' \
   -printf 'OCTAL2: \02\n' \
   -printf 'OCTAL3: \003\n' \

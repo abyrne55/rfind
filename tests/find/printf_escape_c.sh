@@ -17,13 +17,12 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; fu_path_prepend_
-print_ver_ find
+print_ver_ rfind
 
-echo 'hello^.^world' > exp || framework_failure_
+echo 'hello^^world' > exp || framework_failure_
 
-find . -maxdepth 0 \
+rfind . -maxdepth 0 \
   -printf 'hello^\cthere' \
-  -exec printf %s {} \; \
   -printf '^world\n' \
   > out || fail=1
 

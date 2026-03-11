@@ -17,7 +17,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; fu_path_prepend_
-print_ver_ find
+print_ver_ rfind
 
 # Require seq(1) for this test - which may not be available
 # on some systems, e.g on some *BSDs.
@@ -39,7 +39,7 @@ cleanup_() { kill $pid 2>/dev/null && wait $pid; }
 # Now run find(1) many times.
 > err
 for f in $(seq 1000); do \
-  find testdir -ignore_readdir_race -ls 2>> err || fail=1; \
+  rfind testdir -ignore_readdir_race -ls 2>> err || fail=1; \
 done > out
 
 test 1000 -le $( wc -l < out ) || fail=1

@@ -35,7 +35,7 @@ if { ![info exists FTSFIND] } {
     if ![file exists "$dir/$objfile"] then {
 	error "dir is $dir, but I cannot see $objfile in that directory"
     }
-    set FTSFIND [findfile $dir/find    $dir/find    [transform find   ]]
+    set FTSFIND [findfile $dir/rfind    $dir/rfind    [transform rfind   ]]
 }
 
 verbose "ftsfind is at $FTSFIND" 2

@@ -202,12 +202,12 @@ Other common options:\n"));
   HTL (_("      --version                output version information and exit\n\n"));
 
   HTL (_("\n\
-In -newerXY, XY stands for the combination [aBcm][aBcmt]; see find(1).\n\
+In -newerXY, XY stands for the combination [aBcm][aBcmt]; see rfind(1).\n\
 \n"));
 
   show_valid_debug_options (0);
   HTL (_("\n\
-Use '-D help' for a description of the options, or see find(1).\n\
+Use '-D help' for a description of the options, or see rfind(1).\n\
 \n"));
 
   explain_how_to_report_bugs (stdout, program_name);

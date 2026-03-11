@@ -1,5 +1,5 @@
 #!/bin/sh
-# Verify that find -used works.
+# Verify that rfind -used works.
 
 # Copyright (C) 2020-2026 Free Software Foundation, Inc.
 
@@ -17,7 +17,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; fu_path_prepend_
-print_ver_ find
+print_ver_ rfind
 
 # Create sample files with the access date D=10,20,30,40 days in the future.
 for d in 10 20 30 40; do
@@ -41,59 +41,59 @@ stat -c "Name: %n  Access: %x  Change: %z" t?0 || : # ignore error.
 # Verify the output for "find -used $d".  Use even number of days to avoid
 # possibly strange effects due to atime/ctime precision etc.
 for d in -45 -35 -25 -15 -5 0 5 15 25 35 45 +0 +5 +15 +25 +35 +45; do
-  echo "== testing: find -used $d"
-  find . -type f -name 't*' -used $d > out2 \
+  echo "== testing: rfind -used $d"
+  rfind . -type f -name 't*' -used $d > out2 \
     || fail=1
   LC_ALL=C sort out2 || framework_failure_
 done > out
 
 cat <<\EOF > exp || framework_failure_
-== testing: find -used -45
+== testing: rfind -used -45
 ./t00
 ./t10
 ./t20
 ./t30
 ./t40
-== testing: find -used -35
+== testing: rfind -used -35
 ./t00
 ./t10
 ./t20
 ./t30
-== testing: find -used -25
+== testing: rfind -used -25
 ./t00
 ./t10
 ./t20
-== testing: find -used -15
+== testing: rfind -used -15
 ./t00
 ./t10
-== testing: find -used -5
+== testing: rfind -used -5
 ./t00
-== testing: find -used 0
-== testing: find -used 5
-== testing: find -used 15
-== testing: find -used 25
-== testing: find -used 35
-== testing: find -used 45
-== testing: find -used +0
+== testing: rfind -used 0
+== testing: rfind -used 5
+== testing: rfind -used 15
+== testing: rfind -used 25
+== testing: rfind -used 35
+== testing: rfind -used 45
+== testing: rfind -used +0
 ./t10
 ./t20
 ./t30
 ./t40
-== testing: find -used +5
+== testing: rfind -used +5
 ./t10
 ./t20
 ./t30
 ./t40
-== testing: find -used +15
+== testing: rfind -used +15
 ./t20
 ./t30
 ./t40
-== testing: find -used +25
+== testing: rfind -used +25
 ./t30
 ./t40
-== testing: find -used +35
+== testing: rfind -used +35
 ./t40
-== testing: find -used +45
+== testing: rfind -used +45
 EOF
 
 compare exp out || { fail=1; cat out; }

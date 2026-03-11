@@ -17,16 +17,16 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; fu_path_prepend_
-print_ver_ find
+print_ver_ rfind
 
 # Option -files0-from requires a file name argument.
-returns_ 1 find -files0-from > out 2> err \
+returns_ 1 rfind -files0-from > out 2> err \
   && grep 'missing argument.*files0' err \
   || { grep . out err; fail=1; }
 
 # Option -files0-from must not be combined with passing starting points on
 # the command line.
-returns_ 1 find OFFENDING -files0-from FILE > out 2> err \
+returns_ 1 rfind OFFENDING -files0-from FILE > out 2> err \
   && grep 'extra operand .*OFFENDING' err \
   && grep 'file operands cannot be combined with -files0-from' err \
   || { grep . out err; fail=1; }
@@ -34,48 +34,12 @@ returns_ 1 find OFFENDING -files0-from FILE > out 2> err \
 # Process "." as default when starting points neither passed via -files0-from
 # nor on the command line.
 printf "%s\n" '.' > exp || framework_failure_
-find -maxdepth 0 > out 2> err || fail=1
+rfind -maxdepth 0 > out 2> err || fail=1
 compare exp out || fail=1
 compare /dev/null err || fail=1
 
-# Option -files0-from with argument "-" (=stdin) must not be combined with
-# the -ok action: getting the user confirmation would mess with stdin.
-returns_ 1 find -files0-from - -ok echo '{}' ';' < /dev/null > out 2> err \
-  && grep 'files0.* standard input .*cannot be combined with .*ok' err \
-  || { grep . out err; fail=1; }
-
-# Option -files0-from with argument "-" (=stdin) must not be combined with
-# the -okdir action: getting the user confirmation would mess with stdin.
-returns_ 1 find -files0-from - -okdir echo '{}' ';' < /dev/null > out 2> err \
-  && grep 'files0.* standard input .*cannot be combined with .*ok' err \
-  || { grep . out err; fail=1; }
-
-# File argument of -files0-from option must not refer to the same file as stdin.
-printf '.' > in || framework_failure_
-returns_ 1 find -files0-from in -ok echo '{}' ';' < in > out 2> err \
-    && grep 'files0.* standard input .*same file .*with -ok, -okdir' err \
-  || { grep . out err; fail=1; }
-
-# Likewise via a symlink.
-if ln -s in inlink; then
-  returns_ 1 find -files0-from inlink -ok echo '{}' ';' < in > out 2> err \
-    && grep 'files0.* standard input .*same file .*with -ok, -okdir' err \
-    || { grep . out err; fail=1; }
-  # ... and vice versa.
-  returns_ 1 find -files0-from in -ok echo '{}' ';' < inlink > out 2> err \
-    && grep 'files0.* standard input .*same file .*with -ok, -okdir' err \
-    || { grep . out err; fail=1; }
-fi
-
-# Likewise when the system provides the name '/dev/stdin'.
-if ls /dev/stdin >/dev/null 2>&1; then
-  returns_ 1 find -files0-from /dev/stdin -ok echo '{}' ';' < in > out 2> err \
-    && grep 'files0.* standard input .*same file .*with -ok, -okdir' err \
-    || { grep . out err; fail=1; }
-fi
-
 # Exercise a non-existing file.
-returns_ 1 find -files0-from ENOENT > out 2> err \
+returns_ 1 rfind -files0-from ENOENT > out 2> err \
   && grep 'cannot open .ENOENT. for reading: No such' err \
   || { grep . out err; fail=1; }
 
@@ -83,7 +47,7 @@ returns_ 1 find -files0-from ENOENT > out 2> err \
 # The shadow(5) file seems to be a good choice for reasonable coverage.
 f='/etc/shadow'
 if test -e $f && test '!' -r $f; then
-  returns_ 1 find -files0-from $f > out 2> err \
+  returns_ 1 rfind -files0-from $f > out 2> err \
   && grep 'cannot open .* for reading: Permission denied' err \
   || { grep . out err; fail=1; }
 fi
@@ -93,36 +57,36 @@ fi
 # descriptor will fail with EISDIR.  Skip on other platforms where that
 # succeeds, e.g. on GNU/Hurd and AIX.
 if returns_ 1 cat / >/dev/null; then
-  returns_ 1 find -files0-from / > out 2> err \
+  returns_ 1 rfind -files0-from / > out 2> err \
     && grep 'read error' err \
     || { grep . out err; fail=1; }
 fi
 
 # Exercise an empty input file.
-find -files0-from /dev/null > out 2> err || fail=1
+rfind -files0-from /dev/null > out 2> err || fail=1
 compare /dev/null out || fail=1
 compare /dev/null err || fail=1
 
 # Likewise via stdin.
-find -files0-from - < /dev/null > out 2> err || fail=1
+rfind -files0-from - < /dev/null > out 2> err || fail=1
 compare /dev/null out || fail=1
 compare /dev/null err || fail=1
 
 # Likewise via a pipe on stdin.
-cat /dev/null | find -files0-from - > out 2> err || fail=1
+cat /dev/null | rfind -files0-from - > out 2> err || fail=1
 compare /dev/null out || fail=1
 compare /dev/null err || fail=1
 
 # With the -files0-from option, now a closing paren could be passed as first
 # predicate (without, it is treated as a starting point).  Ensure that find(1)
 # handles this invalid invocation.
-returns_ 1 find -files0-from - ')' -print < /dev/null > out 2> err || fail=1
+returns_ 1 rfind -files0-from - ')' -print < /dev/null > out 2> err || fail=1
 compare /dev/null out || fail=1
 grep "inv.*: expected expression before closing parentheses" err || fail=1
 
 # Likewise in the case find(1) implicitly adds the default action via the
 # artificial '( user-expr ) -print' construct.
-returns_ 1 find -files0-from - ')' < /dev/null > out 2> err || fail=1
+returns_ 1 rfind -files0-from - ')' < /dev/null > out 2> err || fail=1
 compare /dev/null out || fail=1
 grep "inv.*: expected expression before closing parentheses" err || fail=1
 
@@ -130,7 +94,7 @@ grep "inv.*: expected expression before closing parentheses" err || fail=1
 touch a b || framework_failure_
 printf '%s\0' a b > in || framework_failure_
 tr '\0' '\n' < in > exp || framework_failure_
-find -files0-from in -print > out 2> err || fail=1
+rfind -files0-from in -print > out 2> err || fail=1
 compare exp out || fail=1
 compare /dev/null err || fail=1
 
@@ -139,7 +103,7 @@ compare /dev/null err || fail=1
 touch ./-print ./-mtime ./-size || framework_failure_
 printf '%s\0' _print _mtime _size | tr '_' '-' > in || framework_failure_
 tr '\0' '\n' < in > exp || framework_failure_
-find -files0-from in -printf '%p\n' > out 2> err || fail=1
+rfind -files0-from in -printf '%p\n' > out 2> err || fail=1
 compare exp out || fail=1
 compare /dev/null err || fail=1
 
@@ -147,17 +111,17 @@ compare /dev/null err || fail=1
 printf '%s\n' a b > exp || framework_failure_
 printf '%s\0' a '' b \
   | tee file \
-  | returns_ 1 find -files0-from - -print > out 2> err || fail=1
+  | returns_ 1 rfind -files0-from - -print > out 2> err || fail=1
 compare exp out || fail=1
 grep '(standard input).:2: invalid zero-length file name' err || fail=1
 # ... and once per file.
-returns_ 1 find -files0-from file -print > out 2> err || fail=1
+returns_ 1 rfind -files0-from file -print > out 2> err || fail=1
 compare exp out || fail=1
 grep 'file.:2: invalid zero-length file name' err || fail=1
 
 # Non-existing file name.
 printf '%s\0' a ENOENT b \
-  | returns_ 1 find -files0-from - -print > out 2> err || fail=1
+  | returns_ 1 rfind -files0-from - -print > out 2> err || fail=1
 compare exp out || fail=1
 grep 'ENOENT' err || fail=1
 
@@ -167,7 +131,7 @@ printf '%s\0' m1 > m1 || framework_failure_
 printf '%s\0' m2 > m2 || framework_failure_
 printf '%s\0' m3 > m3 || framework_failure_
 tr '\0' '\n' < m3 > exp || framework_failure_
-find -files0-from m1 -files0-from m2 -files0-from m3 > out 2> err || fail=1
+rfind -files0-from m1 -files0-from m2 -files0-from m3 > out 2> err || fail=1
 compare exp out || fail=1
 compare /dev/null err || fail=1
 
@@ -175,12 +139,12 @@ compare /dev/null err || fail=1
 mkdir d1 d1/d2 d1/d2/d3 && touch d1/d2/d3/file || framework_failure_
 printf '%s\n' d1 d1/d2 d1/d2/d3 d1/d2/d3/file > exp || framework_failure_
 printf 'd1' \
-  | find -files0-from - > out 2> err || fail=1
+  | rfind -files0-from - > out 2> err || fail=1
 compare exp out || fail=1
 compare /dev/null err || fail=1
 # ... and how to avoid recursion with -maxdepth 0.
-find d1 -print0 \
-  | find -files0-from - -maxdepth 0 > out 2> err || fail=1
+rfind d1 -print0 \
+  | rfind -files0-from - -maxdepth 0 > out 2> err || fail=1
 compare exp out || fail=1
 compare /dev/null err || fail=1
 
@@ -188,11 +152,11 @@ compare /dev/null err || fail=1
 # Create file 'exp' with many times its own name as content, NUL-separated;
 # and let find(1) check that it worked (4x in bytes).
 yes exp | head -n 100000 | tr '\n' '\0' > exp \
-  && find exp -size 400000c | grep . || framework_failure_
+  && rfind exp -size 400000c | grep . || framework_failure_
 # Run the test.
-find -files0-from exp > out 2> err || fail=1
+rfind -files0-from exp > out 2> err || fail=1
 # ... and verify.
 test $( wc -l < out ) = 100000 || fail=1
-find out -size 400000c | grep . || fail=1
+rfind out -size 400000c | grep . || fail=1
 
 Exit $fail

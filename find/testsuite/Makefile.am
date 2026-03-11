@@ -19,7 +19,7 @@
 # in earlier releases which I don't have copies of).
 
 AUTOMAKE_OPTIONS = dejagnu parallel-tests
-FIND = ../find
+FIND = ../rfind
 FINDFLAGS =
 
 DEJATOOL = find

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Exercise find -mount vs. -xdev behaviour for bind mounts (on same device).
+# Exercise rfind -mount vs. -xdev behaviour for bind mounts (on same device).
 
 # Copyright (C) 2026 Free Software Foundation, Inc.
 
@@ -17,7 +17,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 . "${srcdir=.}/tests/init.sh"; fu_path_prepend_
-print_ver_ find
+print_ver_ rfind
 
 # The test setup requires root permissions (while the pure test run would not).
 require_root_
@@ -40,16 +40,16 @@ mount --bind d mnt \
 mnt_f='./mnt/f'
 echo "$mnt_f" > exp || framework_failure_
 
-find -path "$mnt_f" > out || fail=1
+rfind -path "$mnt_f" > out || fail=1
 compare exp out || fail=1
 
-find -xdev -path "$mnt_f" > out-x || fail=1
+rfind -xdev -path "$mnt_f" > out-x || fail=1
 compare exp out-x || fail=1
 
-find -mount -path "$mnt_f" > out-m || fail=1
+rfind -mount -path "$mnt_f" > out-m || fail=1
 compare exp out-m || fail=1
 
-find -mount -xdev -path "$mnt_f" > out-mx || fail=1
+rfind -mount -xdev -path "$mnt_f" > out-mx || fail=1
 compare exp out-mx || fail=1
 
 # Now exercise a bind mount of a regular file. Also this has the same device ID,
@@ -62,16 +62,16 @@ mount --bind file mntf \
 
 echo './mntf' > exp || framework_failure_
 
-find -path './mntf' > out || fail=1
+rfind -path './mntf' > out || fail=1
 compare exp out || fail=1
 
-find -xdev -path './mntf' > out-x || fail=1
+rfind -xdev -path './mntf' > out-x || fail=1
 compare exp out-x || fail=1
 
-find -mount -path './mntf' > out-m || fail=1
+rfind -mount -path './mntf' > out-m || fail=1
 compare exp out-m || fail=1
 
-find -mount -xdev -path './mntf' > out-mx || fail=1
+rfind -mount -xdev -path './mntf' > out-mx || fail=1
 compare exp out-mx || fail=1
 
 Exit $fail

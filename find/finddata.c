@@ -1,4 +1,4 @@
-/* finddata.c -- global data for "find".
+/* finddata.c -- global data for "rfind".
    Copyright (C) 1990-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
